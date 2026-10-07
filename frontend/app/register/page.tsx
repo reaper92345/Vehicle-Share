@@ -20,6 +20,32 @@ export default function RegisterPage() {
     event.preventDefault();
     setError("");
     setLoading(true);
+
+    // Front‑end validation (mirrors backend rules)
+    const errors: string[] = [];
+    if (!form.full_name.trim() || form.full_name.trim().length > 120) {
+      errors.push("Full name is required and must be ≤ 120 characters.");
+    }
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(form.email.trim())) {
+      errors.push("A valid email address is required.");
+    }
+    if (!form.phone_number.trim() || form.phone_number.trim().length > 32) {
+      errors.push("Phone number is required and must be ≤ 32 characters.");
+    }
+    if (typeof form.password !== "string" || form.password.length < 8) {
+      errors.push("Password must be at least 8 characters.");
+    }
+    const allowedTypes = new Set(["renter", "owner", "both"]);
+    if (!allowedTypes.has(form.user_type)) {
+      errors.push("Account type must be renter, owner, or both.");
+    }
+    if (errors.length) {
+      setError(errors.join(" "));
+      setLoading(false);
+      return;
+    }
+
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
       const response = await fetch(`${apiUrl}/api/auth/register`, {

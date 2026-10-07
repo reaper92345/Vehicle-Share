@@ -1,6 +1,6 @@
 -- Requires PostgreSQL 13+ for gen_random_uuid().
 
-CREATE TYPE user_type AS ENUM ('renter', 'owner', 'both');
+CREATE TYPE user_type AS ENUM ('renter', 'owner', 'both', 'admin');
 CREATE TYPE equipment_category AS ENUM ('Agriculture', 'Construction');
 CREATE TYPE booking_status AS ENUM ('Pending', 'Approved', 'Active', 'Completed', 'Cancelled');
 

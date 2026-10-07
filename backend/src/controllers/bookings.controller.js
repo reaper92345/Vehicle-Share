@@ -143,4 +143,30 @@ const getMyBookings = asyncHandler(async (req, res) => {
   return res.status(200).json({ bookings: rows });
 });
 
-module.exports = { createBooking, updateBookingStatus, getMyBookings };
+// Admin: list all bookings (any status)
+const listAllBookings = asyncHandler(async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT b.*, e.title AS equipment_title, e.location, u.full_name AS renter_name, owner.full_name AS owner_name
+     FROM bookings b
+     JOIN equipment e ON e.id = b.equipment_id
+     JOIN users u ON u.id = b.renter_id
+     JOIN users owner ON owner.id = e.owner_id
+     ORDER BY b.created_at DESC`
+  );
+  res.status(200).json({ bookings: rows });
+});
+
+// Admin: delete a booking
+const deleteBooking = asyncHandler(async (req, res) => {
+  const bookingId = parsePositiveInteger(req.params.id);
+  if (!bookingId) {
+    return res.status(400).json({ error: 'Invalid booking id.' });
+  }
+  const result = await pool.query('DELETE FROM bookings WHERE id = $1 RETURNING id', [bookingId]);
+  if (result.rowCount === 0) {
+    return res.status(404).json({ error: 'Booking not found.' });
+  }
+  res.status(200).json({ message: 'Booking deleted.' });
+});
+
+module.exports = { createBooking, updateBookingStatus, getMyBookings, listAllBookings, deleteBooking };

@@ -99,7 +99,7 @@ The Next ESLint config was removed because its development-only dependency tree 
 
 For authenticated endpoints, use `Authorization: Bearer <token>`. User types are `renter`, `owner`, and `both`; equipment categories are `Agriculture` and `Construction`.
 
-**Admin username:** `admin_user_202310`
+**Admin username:** `langoor92345@gmail.com`
 
 **Admin password:** `AdminPass!2023`
 

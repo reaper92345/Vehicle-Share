@@ -4,11 +4,15 @@ const bcrypt = require('bcryptjs');
 
 (async () => {
   try {
-    const password = 'AdminPass!2023';
-    const email = 'langoor92345@gmail.com';
-    const fullName = 'Admin User';
-    const phone = '9789124352';
-    const userType = 'owner'; // can be 'owner', 'renter', or 'both'
+    const password = process.env.ADMIN_PASSWORD;
+    const email = process.env.ADMIN_EMAIL;
+    const fullName = process.env.ADMIN_FULL_NAME || 'Admin User';
+    const phone = process.env.ADMIN_PHONE || '0000000000';
+    const userType = 'admin'; // admin role
+
+    if (!password || !email) {
+      throw new Error('ADMIN_PASSWORD and ADMIN_EMAIL environment variables must be set');
+    }
 
     const passwordHash = await bcrypt.hash(password, 12);
     await pool.query(

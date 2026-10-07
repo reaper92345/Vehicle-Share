@@ -4,7 +4,7 @@ const { Pool } = require("pg");
 process.env.PGHOST = process.env.PGHOST || "localhost";
 process.env.PGPORT = process.env.PGPORT || "5432";
 process.env.PGUSER = process.env.PGUSER || "postgres";
-process.env.PGPASSWORD = process.env.PGPASSWORD || "EquipShare-Local-Database-Password-Change-Me";
+if (!process.env.PGPASSWORD) { throw new Error('PGPASSWORD environment variable is required'); }
 process.env.PGDATABASE = process.env.PGDATABASE || "postgres";
 process.env.PGSSL = process.env.PGSSL || "false";
 

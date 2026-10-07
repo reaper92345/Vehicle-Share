@@ -1,4 +1,4 @@
-const USER_TYPES = new Set(["renter", "owner", "both"]);
+const USER_TYPES = new Set(["renter", "owner", "both", "admin"]);
 const EQUIPMENT_CATEGORIES = new Set(["Agriculture", "Construction"]);
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

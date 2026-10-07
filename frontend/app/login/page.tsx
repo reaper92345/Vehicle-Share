@@ -15,6 +15,22 @@ export default function LoginPage() {
     event.preventDefault();
     setError("");
     setLoading(true);
+
+    // Front‑end validation (mirrors backend rules)
+    const errors: string[] = [];
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email.trim())) {
+      errors.push("A valid email address is required.");
+    }
+    if (!password || password.length === 0) {
+      errors.push("Password is required.");
+    }
+    if (errors.length) {
+      setError(errors.join(" "));
+      setLoading(false);
+      return;
+    }
+
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
       const response = await fetch(`${apiUrl}/api/auth/login`, {

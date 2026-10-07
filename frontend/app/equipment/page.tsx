@@ -31,7 +31,7 @@ export default function EquipmentListPage() {
   if (location) queryParams.append("location", location);
   if (search) queryParams.append("search", search);
   const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/equipment?${queryParams.toString()}`;
-  const { data: equipmentList, error, isLoading, mutate } = useSWR<Equipment[]>(apiUrl, fetcher, { revalidateOnFocus: false });
+  const { data: equipmentList = [], error, isLoading, mutate } = useSWR<Equipment[]>(apiUrl, fetcher, { revalidateOnFocus: false });
 
   // Optimistic UI: when filters change we let SWR revalidate automatically.
 
@@ -87,15 +87,16 @@ export default function EquipmentListPage() {
               <p className="text-lg font-semibold text-slate-900">EquipShare</p>
               <p className="text-xs text-slate-500">Rent heavy equipment smarter</p>
             </div>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/equipment/create" className="btn-primary" title="Create new equipment listing">
-              + List Equipment
-            </Link>
-            <Link href="/login" className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-slate-900" title="Login to your account">
-              Login
-            </Link>
-          </div>
+                        </Link>
+
+            <div className="flex items-center gap-4">
+                <a className="btn-primary" title="Add new equipment listing" href="/equipment/create">List Equipment</a>
+
+              <Link href="/login" className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-slate-900" title="Login to your account">
+                Login
+              </Link>
+            </div>
+
         </nav>
       </header>
 
@@ -184,6 +185,7 @@ export default function EquipmentListPage() {
                       <Link href="/login" className="btn-primary text-xs" title="Book this equipment">
                         Book Now
                       </Link>
+
                     </div>
                   </div>
                 </div>
