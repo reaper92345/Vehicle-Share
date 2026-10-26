@@ -42,6 +42,7 @@ CREATE TABLE bookings (
     end_date DATE NOT NULL,
     total_price NUMERIC(12, 2) NOT NULL CHECK (total_price >= 0),
     status booking_status NOT NULL DEFAULT 'Pending',
+    payment_status VARCHAR(20) NOT NULL DEFAULT 'unpaid',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CHECK (end_date >= start_date)

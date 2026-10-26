@@ -7,11 +7,18 @@ const {
 } = require("../utils/validation");
 const { asyncHandler } = require("../utils/async-handler");
 
+// Helper to normalize category strings (case‑insensitive)
+function normalizeCategory(cat) {
+  if (typeof cat !== 'string') return '';
+  const lower = cat.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
 const EQUIPMENT_FIELDS = {
   title: { column: "title", validate: (value) => isNonEmptyString(value, 160), required: true },
   category: {
     column: "category",
-    validate: (value) => EQUIPMENT_CATEGORIES.has(value),
+    validate: (value) => typeof value === 'string' && EQUIPMENT_CATEGORIES.has(value.toLowerCase()),
     required: true,
   },
   sub_category: {
@@ -74,8 +81,15 @@ const listEquipment = asyncHandler(async (req, res) => {
   if (limit === null || limit > 100 || page === null) {
     return res.status(400).json({ error: "limit must be 1-100 and page must be a positive integer." });
   }
-  if (category !== undefined && !EQUIPMENT_CATEGORIES.has(category)) {
-    return res.status(400).json({ error: "category must be Agriculture or Construction." });
+  // Normalize category to proper case for DB enum (case‑insensitive)
+  let normalizedCategory = category;
+  if (category !== undefined) {
+    const lower = category.toLowerCase();
+    if (!EQUIPMENT_CATEGORIES.has(lower)) {
+      return res.status(400).json({ error: "category must be Agriculture or Construction." });
+    }
+    // Convert to Enum case (first letter capitalized)
+    normalizedCategory = lower.charAt(0).toUpperCase() + lower.slice(1);
   }
   if (location !== undefined && !isNonEmptyString(location, 200)) {
     return res.status(400).json({ error: "location must be a non-empty string of 200 characters or fewer." });
@@ -88,8 +102,10 @@ const listEquipment = asyncHandler(async (req, res) => {
   const values = [];
 
   if (category !== undefined) {
-    values.push(category);
-    conditions.push(`e.category = $${values.length}`);
+    if (normalizedCategory !== undefined) {
+      values.push(normalizedCategory);
+      conditions.push(`e.category = $${values.length}`);
+    }
   }
   if (location !== undefined) {
     values.push(`%${location.trim()}%`);
@@ -167,7 +183,7 @@ const createEquipment = asyncHandler(async (req, res) => {
     [
       req.user.id,
       body.title.trim(),
-      body.category,
+      normalizeCategory(body.category),
       body.sub_category.trim(),
       body.description === undefined ? null : body.description.trim(),
       body.price_per_day,

@@ -20,3 +20,4 @@ body {
 .input {
   @apply w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none ring-0 transition focus:border-brand-500;
 }
+

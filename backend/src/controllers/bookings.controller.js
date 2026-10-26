@@ -14,6 +14,7 @@ function getBookingOverlapQuery() {
 }
 
 const createBooking = asyncHandler(async (req, res) => {
+  // Existing logic
   if (req.user.userType !== "renter" && req.user.userType !== "both") {
     return res.status(403).json({ error: "Only renters can create booking requests." });
   }
@@ -69,8 +70,8 @@ const createBooking = asyncHandler(async (req, res) => {
   const totalPrice = Number(equipment.price_per_day) * dayCount;
 
   const bookingResult = await pool.query(
-    `INSERT INTO bookings (equipment_id, renter_id, start_date, end_date, total_price, status)
-     VALUES ($1, $2, $3, $4, $5, 'Pending')
+    `INSERT INTO bookings (equipment_id, renter_id, start_date, end_date, total_price, status, payment_status)
+     VALUES ($1, $2, $3, $4, $5, 'Pending', 'unpaid')
      RETURNING *`,
     [equipment.id, req.user.id, start.toISOString().slice(0, 10), end.toISOString().slice(0, 10), totalPrice]
   );
@@ -125,25 +126,23 @@ const updateBookingStatus = asyncHandler(async (req, res) => {
   });
 });
 
-const getMyBookings = asyncHandler(async (req, res) => {
-  const whereClause = req.user.userType === "owner" ? "e.owner_id = $1" : "b.renter_id = $1";
-  const values = [req.user.id];
-
+const getOwnerDashboard = asyncHandler(async (req, res) => {
+  // Owner can view all bookings for their equipment with payment status
   const { rows } = await pool.query(
-    `SELECT b.*, e.title AS equipment_title, e.location, u.full_name AS renter_name, owner.full_name AS owner_name
+    `SELECT b.*, e.title AS equipment_title, e.location, u.full_name AS renter_name
      FROM bookings b
      JOIN equipment e ON e.id = b.equipment_id
      JOIN users u ON u.id = b.renter_id
-     JOIN users owner ON owner.id = e.owner_id
-     WHERE ${whereClause}
+     WHERE e.owner_id = $1
      ORDER BY b.created_at DESC`,
-    values
+    [req.user.id]
   );
-
   return res.status(200).json({ bookings: rows });
 });
 
+
 // Admin: list all bookings (any status)
+// New QR code generation for payment
 const listAllBookings = asyncHandler(async (req, res) => {
   const { rows } = await pool.query(
     `SELECT b.*, e.title AS equipment_title, e.location, u.full_name AS renter_name, owner.full_name AS owner_name
@@ -169,4 +168,4 @@ const deleteBooking = asyncHandler(async (req, res) => {
   res.status(200).json({ message: 'Booking deleted.' });
 });
 
-module.exports = { createBooking, updateBookingStatus, getMyBookings, listAllBookings, deleteBooking };
+module.exports = { createBooking, updateBookingStatus, getMyBookings, getOwnerDashboard, listAllBookings, deleteBooking };

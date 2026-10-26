@@ -20,6 +20,30 @@ export default function CreateEquipmentPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string,string>>({});
   const [authChecked, setAuthChecked] = useState(false);
   const router = useRouter();
+  const [user, setUser] = useState<{ name?: string; email?: string; image?: string } | null>(null);
+
+  // Load logged‑in user info
+  useEffect(() => {
+    const stored = localStorage.getItem('equipshare_user');
+    if (stored) {
+      try { setUser(JSON.parse(stored)); } catch (_) {}
+    }
+  }, []);
+
+  function handleLogout() {
+    localStorage.removeItem('equipshare_token');
+    localStorage.removeItem('equipshare_user');
+    setUser(null);
+    router.push('/');
+  }
+
+  // Helper to compute avatar initial
+  const getInitial = () => {
+    if (!user) return "U";
+    if (user.name && user.name.trim().length > 0) return user.name.trim()[0].toUpperCase();
+    if (user.email && user.email.trim().length > 0) return user.email.trim()[0].toUpperCase();
+    return "U";
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("equipshare_token");
@@ -27,7 +51,9 @@ export default function CreateEquipmentPage() {
       router.push("/login?redirect=/equipment/create");
     } else {
       try {
-        const decoded = jwtDecode(token) as any;
+        // Ensure token is a string before decoding
+        const tokenStr = typeof token === "string" ? token : String(token);
+        const decoded = jwtDecode(tokenStr) as any;
         if (decoded.userType !== "owner" && decoded.userType !== "both") {
           alert("Only owners can create equipment listings.");
           router.push("/equipment");
@@ -35,7 +61,7 @@ export default function CreateEquipmentPage() {
           setAuthChecked(true);
         }
       } catch (e) {
-        console.error(e);
+        console.error("Failed to decode JWT:", e);
         router.push("/login?redirect=/equipment/create");
       }
     }
@@ -155,10 +181,21 @@ export default function CreateEquipmentPage() {
           </Link>
           {/* Header – replace the Next.js Link with an <a> */}
           <div className="flex items-center gap-4">
-            <a className="btn-primary" title="Browse equipment listings" href="/equipment" >  List Equipment  </a>
-
-            <Link href="/login" className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-slate-900"
-              title="Login to your account">  Login </Link>
+            <a className="btn-primary" title="Browse equipment listings" href="/equipment">  List Equipment  </a>
+            {user ? (
+              <>
+                <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-200 text-sm font-medium text-slate-700">
+                    {getInitial()}
+                  </div>
+                </div>
+                <button onClick={handleLogout} className="px-4 py-2 text-sm font-medium text-red-600 hover:underline">Logout</button>
+              </>
+            ) : (
+              <Link href="/login" className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-slate-900" title="Login to your account">
+                Login
+              </Link>
+            )}
           </div>
 
         </nav>
@@ -220,7 +257,7 @@ export default function CreateEquipmentPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Price Per Day (₹)</label>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Price Per Day (रु)</label>
                 <input
                   type="number"
                   className="input transition-shadow duration-200 focus:shadow-outline"

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+
+
 
 const equipment = [
   {
@@ -10,7 +12,7 @@ const equipment = [
     title: 'Heavy Duty Power Tiller',
     category: 'Agriculture',
     location: 'Nagpur',
-    price: '₹1,500/day',
+    price: 'रु1,500/day',
     image: 'https://images.unsplash.com/photo-1615811361523-6bd03d7748e7?auto=format&fit=crop&w=1200&q=80',
   },
   {
@@ -18,7 +20,7 @@ const equipment = [
     title: 'Concrete Mixer 10/7 Cu. Ft.',
     category: 'Construction',
     location: 'Pune',
-    price: '₹2,800/day',
+    price: 'रु2,800/day',
     image: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=1200&q=80',
   },
   {
@@ -26,7 +28,7 @@ const equipment = [
     title: 'Aluminum Scaffolding Tower',
     category: 'Construction',
     location: 'Bhopal',
-    price: '₹1,200/day',
+    price: 'रु1,200/day',
     image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80',
   },
 ];
@@ -34,7 +36,34 @@ const equipment = [
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
+const [user, setUser] = useState<{ name?: string; email?: string; image?: string } | null>(null);
 
+// Load logged‑in user info
+useEffect(() => {
+  const stored = localStorage.getItem('equipshare_user');
+  if (stored) {
+    try { setUser(JSON.parse(stored)); } catch (_) {}
+  }
+}, []);
+
+// Logout handler
+function handleLogout() {
+  localStorage.removeItem('equipshare_token');
+  localStorage.removeItem('equipshare_user');
+  setUser(null);
+  router.push('/');
+}
+
+// Helper to compute avatar initial
+const getInitial = () => {
+  if (!user) return "U";
+  if (user.name && user.name.trim().length > 0) return user.name.trim()[0].toUpperCase();
+  if (user.email && user.email.trim().length > 0) return user.email.trim()[0].toUpperCase();
+  return "U";
+
+
+    };
+  
   function handleSearchSubmit(e: FormEvent) {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -59,15 +88,34 @@ export default function HomePage() {
             <Link href="/equipment" className="font-medium hover:text-slate-900">Browse Equipment</Link>
             <a href="#discover" className="hover:text-slate-900">Discover</a>
             <a href="#how-it-works" className="hover:text-slate-900">How it works</a>
-            <a href="#owners" className="hover:text-slate-900">For owners</a>
+            <a href="#owners" className="hover:text:slate-900">For owners</a>
+            <Link href="/privacy" className="font-medium hover:text-slate-900">Privacy</Link>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/login" className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900">
-              Login
-            </Link>
-            <Link href="/register" className="btn-primary">
-              Get Started
-            </Link>
+            {user ? (
+              <>
+                <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-200 text-sm font-medium text-slate-700">
+                    {getInitial()}
+                  </div>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 text-sm font-medium text-red-600 hover:underline"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900">
+                  Login
+                </Link>
+                <Link href="/register" className="btn-primary">
+                  Get Started
+                </Link>
+                              </>
+            )}
           </div>
         </nav>
       </header>

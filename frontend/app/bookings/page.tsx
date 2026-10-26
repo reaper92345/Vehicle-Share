@@ -80,7 +80,7 @@ export default function BookingsPage() {
                   <p className="mt-1 text-sm text-slate-600">
                     {b.start_date} to {b.end_date}
                   </p>
-                  <p className="mt-1 font-semibold text-slate-900">Total: ₹{b.total_price}</p>
+                  <p className="mt-1 font-semibold text-slate-900">Total: रु{b.total_price}</p>
                 </div>
                 <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-800">
                   {b.status}

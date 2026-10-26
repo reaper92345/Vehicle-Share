@@ -1,5 +1,5 @@
 const USER_TYPES = new Set(["renter", "owner", "both", "admin"]);
-const EQUIPMENT_CATEGORIES = new Set(["Agriculture", "Construction"]);
+const EQUIPMENT_CATEGORIES = new Set(["agriculture", "construction"]); // lower‑case for case‑insensitive validation
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function isNonEmptyString(value, maxLength) {
