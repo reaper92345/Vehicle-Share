@@ -40,9 +40,22 @@ export default function LoginPage() {
       });
       const data = await response.json();
       if (response.ok) {
+        // ✅ Store token
         localStorage.setItem("equipshare_token", data.token);
-        localStorage.setItem("equipshare_user", JSON.stringify(data.user));
-        router.push("/equipment");
+        // 👉 Ensure role exists for the dashboard
+        const userWithRole = {
+          ...data.user,
+          // If the backend already sent `role` it’s kept; otherwise fallback to `user_type`
+          role: (data.user as any).role ?? (data.user as any).user_type,
+        };
+        localStorage.setItem("equipshare_user", JSON.stringify(userWithRole));
+        if (userWithRole.role?.toString().toLowerCase() === 'admin') {
+  router.push('/admin/dashboard');
+} else if (userWithRole.role?.toString().toLowerCase() === 'owner') {
+  router.push('/owner/dashboard');
+} else {
+  router.push('/equipment');
+}
         return;
       }
       setError(data.error || "Login failed");

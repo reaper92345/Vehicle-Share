@@ -101,7 +101,7 @@ For authenticated endpoints, use `Authorization: Bearer <token>`. User types are
 
 **Admin username:** `langoor92345@gmail.com`
 
-**Admin password:** `AdminPass!2023`
+**Admin password:** `AdminPass!2023`tdGgdfOqeNcu
 
 ## Setup & Admin Login
 

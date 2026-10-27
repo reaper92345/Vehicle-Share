@@ -52,6 +52,10 @@ const EQUIPMENT_FIELDS = {
     required: false,
   },
   is_available: { column: "is_available", validate: (value) => typeof value === "boolean", required: false },
+  // New optional fields
+  condition: { column: "condition", validate: (value) => typeof value === "string" && isNonEmptyString(value, 100), required: false },
+  manufacturer: { column: "manufacturer", validate: (value) => typeof value === "string" && isNonEmptyString(value, 120), required: false },
+  year_of_manufacture: { column: "year_of_manufacture", validate: (value) => Number.isInteger(value) && value > 1900 && value <= new Date().getFullYear(), required: false },
 };
 
 function validateEquipmentInput(body, partial) {
@@ -230,7 +234,7 @@ const updateEquipment = asyncHandler(async (req, res) => {
      SET ${assignments.join(", ")}
      WHERE id = $${values.length - 1} AND owner_id = $${values.length}
      RETURNING id, owner_id, title, category, sub_category, description,
-               price_per_day, location, image_url, is_available, created_at`,
+               price_per_day, location, image_url, is_available, condition, manufacturer, year_of_manufacture, created_at`,
     values
   );
 

@@ -85,7 +85,8 @@ const login = asyncHandler(async (req, res) => {
   );
 
   const { password_hash: _passwordHash, ...publicUser } = user;
-  return res.status(200).json({ token, user: publicUser });
+  const responseUser = { ...publicUser, role: user.user_type };
+  return res.status(200).json({ token, user: responseUser });
 });
 
 module.exports = { register, login };
