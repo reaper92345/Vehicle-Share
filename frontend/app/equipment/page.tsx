@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import RenterDashboard from "./components/RenterDashboard";
+import { TiltCard, MagneticButton } from "../../components/smoothui";
 // Removed renter.css import to avoid conflicts
 
 interface Equipment {
@@ -18,6 +19,8 @@ interface Equipment {
   image_url: string;
   is_available: boolean;
   owner_name?: string;
+  owner_email?: string;
+  owner_phone?: string;
 }
 
 export default function EquipmentListPage() {
@@ -79,7 +82,7 @@ export default function EquipmentListPage() {
 
   // Render tab navigation – show Renter tab only for renter/admin roles
   // Show Renter tab unconditionally; RenterDashboard component will handle auth/role checks
-  const canSeeRenterTab = true;
+  const canSeeRenterTab = ["admin", "owner", "both"].includes(user?.role?.toLowerCase() ?? "");
 
   return (
     <main className="min-h-screen bg-slate-50 pb-20">
@@ -93,6 +96,15 @@ export default function EquipmentListPage() {
             </div>
           </Link>
           <div className="flex items-center gap-4">
+            <Link href="/hire/dashboard" className="text-sm font-semibold text-slate-700 hover:text-slate-900">
+              Hire dashboard
+            </Link>
+            <Link href="/owner/dashboard" className="text-sm font-semibold text-slate-700 hover:text-slate-900">
+              Lister dashboard
+            </Link>
+            <Link href="/bookings" className="text-sm font-semibold text-slate-700 hover:text-slate-900">
+              Bookings & Requests
+            </Link>
             <Link href="/equipment/create" className="btn-primary" title="Add new equipment listing">List Equipment</Link>
             {user ? (
               <>
@@ -111,19 +123,27 @@ export default function EquipmentListPage() {
       </header>
 
       {/* Tab selector */}
-      <div className="mx-auto max-w-7xl px-6 py-4 flex space-x-4">
+      <div className="mx-auto max-w-7xl px-6 py-4 flex space-x-3">
         <button
-          className={`px-4 py-2 rounded ${activeTab === "equipment" ? "bg-brand-700 text-white" : "bg-gray-200"}`}
+          className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition shadow-sm ${
+            activeTab === "equipment"
+              ? "bg-brand-700 text-white shadow-brand-700/20"
+              : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+          }`}
           onClick={() => setActiveTab("equipment")}
         >
-          Equipment List
+          🚜 Equipment Catalog
         </button>
         {canSeeRenterTab && (
           <button
-            className={`px-4 py-2 rounded ${activeTab === "renter" ? "bg-brand-700 text-white" : "bg-gray-200"}`}
+            className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition shadow-sm ${
+              activeTab === "renter"
+                ? "bg-slate-900 text-cyan-400 border border-cyan-500/40 shadow-cyan-500/10"
+                : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+            }`}
             onClick={() => setActiveTab("renter")}
           >
-            Renter Dashboard
+            💎 Glass Lister Dashboard
           </button>
         )}
       </div>
@@ -179,7 +199,7 @@ export default function EquipmentListPage() {
           {!isLoading && equipmentList && (
             <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {equipmentList.map((item) => (
-                <div key={item.id} className="card flex flex-col overflow-hidden">
+                <TiltCard key={item.id} className="card flex flex-col overflow-hidden hover:shadow-xl">
                   <img src={item.image_url} alt={item.title} className="h-48 w-full object-cover" />
                   <div className="flex flex-1 flex-col p-5">
                     <div className="flex items-center justify-between">
@@ -187,6 +207,12 @@ export default function EquipmentListPage() {
                       <span className="text-xs font-medium text-slate-500">{item.location}</span>
                     </div>
                     <h3 className="mt-3 text-lg font-bold text-slate-900">{item.title}</h3>
+                    {item.owner_name && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        Owner: {item.owner_name}
+                        {item.owner_phone ? ` · ${item.owner_phone}` : ""}
+                      </p>
+                    )}
                     <p className="mt-1 line-clamp-2 text-sm text-slate-600">{item.description}</p>
                     <div className="mt-auto pt-4">
                       <div className="flex items-center justify-between border-t border-slate-100 pt-4">
@@ -194,11 +220,15 @@ export default function EquipmentListPage() {
                           <p className="text-xs text-slate-500">Price per day</p>
                           <p className="text-xl font-bold text-slate-900">रु{item.price_per_day}</p>
                         </div>
-                        <Link href="/login" className="btn-primary text-xs" title="Book this equipment">Book Now</Link>
+                        <Link href={`/bookings/create?equipment_id=${item.id}`}>
+                          <MagneticButton className="btn-primary text-xs py-2 px-4 rounded-xl" title="Book this equipment">
+                            Book Now
+                          </MagneticButton>
+                        </Link>
                       </div>
                     </div>
                   </div>
-                </div>
+                </TiltCard>
               ))}
             </div>
           )}

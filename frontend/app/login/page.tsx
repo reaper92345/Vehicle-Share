@@ -1,32 +1,31 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function LoginPage() {
+function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError("");
     setLoading(true);
 
-    // Front‑end validation (mirrors backend rules)
-    const errors: string[] = [];
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(email.trim())) {
-      errors.push("A valid email address is required.");
+      setError("A valid email address is required.");
+      setLoading(false);
+      return;
     }
     if (!password || password.length === 0) {
-      errors.push("Password is required.");
-    }
-    if (errors.length) {
-      setError(errors.join(" "));
+      setError("Password is required.");
       setLoading(false);
       return;
     }
@@ -40,22 +39,25 @@ export default function LoginPage() {
       });
       const data = await response.json();
       if (response.ok) {
-        // ✅ Store token
         localStorage.setItem("equipshare_token", data.token);
-        // 👉 Ensure role exists for the dashboard
         const userWithRole = {
           ...data.user,
-          // If the backend already sent `role` it’s kept; otherwise fallback to `user_type`
           role: (data.user as any).role ?? (data.user as any).user_type,
         };
         localStorage.setItem("equipshare_user", JSON.stringify(userWithRole));
-        if (userWithRole.role?.toString().toLowerCase() === 'admin') {
-  router.push('/admin/dashboard');
-} else if (userWithRole.role?.toString().toLowerCase() === 'owner') {
-  router.push('/owner/dashboard');
-} else {
-  router.push('/equipment');
-}
+
+        if (redirectParam && redirectParam.startsWith("/")) {
+          router.push(redirectParam);
+          return;
+        }
+
+        if (userWithRole.role?.toString().toLowerCase() === "admin") {
+          router.push("/admin/dashboard");
+        } else if (userWithRole.role?.toString().toLowerCase() === "owner") {
+          router.push("/bookings");
+        } else {
+          router.push("/equipment");
+        }
         return;
       }
       setError(data.error || "Login failed");
@@ -87,11 +89,25 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">Email Address</label>
-            <input className="input" type="email" placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input
+              className="input"
+              type="email"
+              placeholder="name@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">Password</label>
-            <input className="input" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <input
+              className="input"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
           </div>
           <button className="btn-primary w-full" type="submit" disabled={loading}>
             {loading ? "Logging in..." : "Login"}
@@ -106,5 +122,13 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-slate-500">Loading login...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

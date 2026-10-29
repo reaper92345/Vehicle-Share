@@ -18,14 +18,14 @@ router.put('/users/:id', userController.updateUser);
 router.delete('/users/:id', userController.deleteUser);
 
 // Equipment management (reuse existing controller but admin can see all)
-router.get('/equipment', equipmentController.listEquipment);
+router.get('/equipment', equipmentController.listAllEquipmentAdmin);
 router.post('/equipment', equipmentController.createEquipment);
-router.put('/equipment/:id', equipmentController.updateEquipment);
+router.put('/equipment/:id', equipmentController.adminUpdateEquipment);
 router.delete('/equipment/:id', equipmentController.deleteEquipment);
 
 // Booking overview
 router.get('/bookings', bookingController.listAllBookings);
-router.put('/bookings/:id', bookingController.updateBookingStatus);
+router.put('/bookings/:id', bookingController.adminUpdateBooking);
 router.delete('/bookings/:id', bookingController.deleteBooking);
 
 // Analytics/dashboard

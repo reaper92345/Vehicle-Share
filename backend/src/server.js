@@ -25,12 +25,34 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error("PORT must be a valid TCP port.");
 }
 
-const server = app.listen(port, () => {
-  console.log(`EquipShare API listening on port ${port}`);
-});
+async function ensurePortalSchema() {
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_disabled BOOLEAN NOT NULL DEFAULT FALSE`);
+  await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMPTZ`);
+  await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deployment_location TEXT`);
+}
+
+let server;
+
+ensurePortalSchema()
+  .then(() => {
+    server = app.listen(port, () => {
+      console.log(`EquipShare API listening on port ${port}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Failed to apply portal schema updates:", error);
+    process.exit(1);
+  });
 
 async function shutDown(signal) {
   console.log(`${signal} received; closing the API server.`);
+  if (!server) {
+    try {
+      await pool.end();
+    } catch (_error) {}
+    process.exit(0);
+    return;
+  }
   server.close(async (serverError) => {
     try {
       await pool.end();

@@ -34,10 +34,10 @@ const register = asyncHandler(async (req, res) => {
   const normalizedEmail = email.trim().toLowerCase();
 
   try {
-    const { rows } = await pool.query(
-      `INSERT INTO users (full_name, email, phone_number, password_hash, user_type)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, full_name, email, phone_number, user_type, created_at`,
+  const { rows } = await pool.query(
+    `INSERT INTO users (full_name, email, phone_number, password_hash, user_type)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id, full_name, email, phone_number, user_type, created_at`
       [full_name.trim(), normalizedEmail, phone_number.trim(), passwordHash, user_type]
     );
 
@@ -60,7 +60,7 @@ const login = asyncHandler(async (req, res) => {
   }
 
   const { rows } = await pool.query(
-    `SELECT id, full_name, email, phone_number, password_hash, user_type, created_at
+    `SELECT id, full_name, email, phone_number, password_hash, user_type, created_at, is_disabled
      FROM users
      WHERE email = $1`,
     [email.trim().toLowerCase()]
@@ -73,20 +73,41 @@ const login = asyncHandler(async (req, res) => {
   if (!user || !passwordMatches) {
     return res.status(401).json({ error: "Invalid email or password." });
   }
+  if (user.is_disabled) {
+    return res.status(403).json({ error: "This account has been disabled. Contact support." });
+  }
 
   const token = jwt.sign(
-    { userType: user.user_type },
+    { userType: user.user_type, role: user.user_type },
     process.env.JWT_SECRET,
     {
       subject: user.id,
-      expiresIn: process.env.JWT_EXPIRES_IN || "1h",
+      expiresIn: process.env.JWT_EXPIRES_IN || "7d",
       algorithm: "HS256",
     }
   );
 
-  const { password_hash: _passwordHash, ...publicUser } = user;
+  const { password_hash: _passwordHash, is_disabled: _disabled, ...publicUser } = user;
   const responseUser = { ...publicUser, role: user.user_type };
   return res.status(200).json({ token, user: responseUser });
 });
 
-module.exports = { register, login };
+const getMe = asyncHandler(async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT id, full_name, email, phone_number, user_type, created_at, is_disabled
+     FROM users
+     WHERE id = $1`,
+    [req.user.id]
+  );
+  if (rows.length === 0) {
+    return res.status(404).json({ error: "User not found." });
+  }
+  const user = rows[0];
+  if (user.is_disabled) {
+    return res.status(403).json({ error: "This account has been disabled. Contact support." });
+  }
+  const { is_disabled: _disabled, ...publicUser } = user;
+  return res.status(200).json({ user: { ...publicUser, role: user.user_type } });
+});
+
+module.exports = { register, login, getMe };

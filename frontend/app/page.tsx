@@ -36,7 +36,7 @@ const equipment = [
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
-const [user, setUser] = useState<{ name?: string; email?: string; image?: string } | null>(null);
+const [user, setUser] = useState<{ name?: string; full_name?: string; email?: string; image?: string; role?: string; user_type?: string } | null>(null);
 
 // Load logged‑in user info
 useEffect(() => {
@@ -86,9 +86,12 @@ const getInitial = () => {
           </Link>
           <div className="hidden items-center gap-8 text-sm text-slate-600 md:flex">
             <Link href="/equipment" className="font-medium hover:text-slate-900">Browse Equipment</Link>
-            <a href="#discover" className="hover:text-slate-900">Discover</a>
-            <a href="#how-it-works" className="hover:text-slate-900">How it works</a>
-            <a href="#owners" className="hover:text:slate-900">For owners</a>
+            <Link href="/hire/dashboard" className="font-medium hover:text-slate-900">Hire portal</Link>
+            <Link href="/owner/dashboard" className="font-medium hover:text-slate-900">Lister portal</Link>
+            <Link href="/bookings" className="font-medium hover:text-slate-900">Bookings</Link>
+            {(user?.role || user?.user_type) === "admin" && (
+              <Link href="/admin/users" className="font-medium hover:text-slate-900">Admin</Link>
+            )}
             <Link href="/privacy" className="font-medium hover:text-slate-900">Privacy</Link>
           </div>
           <div className="flex items-center gap-3">

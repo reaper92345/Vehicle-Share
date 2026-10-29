@@ -3,91 +3,27 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-// Import CSS for styling
-import "./renter.css";
-
-// Simple dashboard component (HTML converted to JSX)
-export default function RenterDashboard() {
+export default function RenterPortalRedirect() {
   const router = useRouter();
 
-  // Check authentication & role
   useEffect(() => {
     const stored = localStorage.getItem("equipshare_user");
     if (!stored) {
-      // Not logged in – redirect to login
-      router.push("/login");
+      router.replace("/login?redirect=/owner/dashboard");
       return;
     }
     try {
       const user = JSON.parse(stored);
-      const role = user.role?.toLowerCase();
-      if (role !== "renter" && role !== "admin") {
-        // Unauthorized – redirect to home or show 403
-        router.push("/");
+      const role = (user.role || user.user_type || "").toLowerCase();
+      if (["owner", "both", "admin"].includes(role)) {
+        router.replace("/owner/dashboard");
+      } else {
+        router.replace("/hire/dashboard");
       }
-    } catch (e) {
-      router.push("/login");
+    } catch (_) {
+      router.replace("/login");
     }
   }, [router]);
 
-  // Dashboard markup – same as static version but JSX syntax
-  return (
-    <>
-      <header className="header">
-        <h1>Renter Dashboard</h1>
-      </header>
-      <main className="container">
-        {/* Earnings Summary */}
-        <section className="card summary-card">
-          <h2>Total Earnings</h2>
-          <p className="value">${"$"}<span id="total-earnings">0.00</span></p>
-        </section>
-
-        {/* Users Table */}
-        <section className="card">
-          <h2>All Users</h2>
-          <table className="data-table" id="users-table">
-            <thead>
-              <tr><th>Name</th><th>Email</th><th>Phone</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </section>
-
-        {/* Equipment Table */}
-        <section className="card">
-          <h2>Listed Equipment</h2>
-          <table className="data-table" id="equipment-table">
-            <thead>
-              <tr><th>Asset ID</th><th>Name</th><th>Status</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </section>
-
-        {/* Rentals Overview */}
-        <section className="card">
-          <h2>Current Rentals</h2>
-          <table className="data-table" id="rentals-table">
-            <thead>
-              <tr><th>Renter</th><th>Equipment</th><th>From</th><th>Deployed At</th><th>Due Return</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </section>
-
-        {/* Payment History */}
-        <section className="card">
-          <h2>Payment History</h2>
-          <table className="data-table" id="payments-table">
-            <thead>
-              <tr><th>Date</th><th>Amount</th><th>Reference</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </section>
-      </main>
-      <script src="../renter/renter.js"></script>
-    </>
-  );
+  return <p className="p-8 text-slate-500">Opening your portal…</p>;
 }

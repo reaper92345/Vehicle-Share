@@ -131,7 +131,7 @@ const listEquipment = asyncHandler(async (req, res) => {
   const { rows } = await pool.query(
     `SELECT e.id, e.owner_id, e.title, e.category, e.sub_category, e.description,
             e.price_per_day, e.location, e.image_url, e.is_available, e.created_at,
-             u.full_name AS owner_name
+             u.full_name AS owner_name, u.email AS owner_email, u.phone_number AS owner_phone
      FROM equipment e
      JOIN users u ON u.id = e.owner_id
      WHERE ${conditions.join(" AND ")}
@@ -152,7 +152,7 @@ const getEquipmentById = asyncHandler(async (req, res) => {
   const { rows } = await pool.query(
     `SELECT e.id, e.owner_id, e.title, e.category, e.sub_category, e.description,
             e.price_per_day, e.location, e.image_url, e.is_available, e.created_at,
-           u.full_name AS owner_name
+           u.full_name AS owner_name, u.email AS owner_email, u.phone_number AS owner_phone
      FROM equipment e
      JOIN users u ON u.id = e.owner_id
      WHERE e.id = $1`,
@@ -163,11 +163,53 @@ const getEquipmentById = asyncHandler(async (req, res) => {
     return res.status(404).json({ error: "Equipment listing not found." });
   }
 
-  return res.status(200).json({ equipment: rows[0] });
+  const bookedDatesResult = await pool.query(
+    `SELECT start_date, end_date
+     FROM bookings
+     WHERE equipment_id = $1
+       AND status IN ('Approved', 'Active')
+       AND end_date >= CURRENT_DATE
+     ORDER BY start_date ASC`,
+    [id]
+  );
+
+  const equipment = {
+    ...rows[0],
+    booked_dates: bookedDatesResult.rows.map((b) => ({
+      start_date: b.start_date instanceof Date ? b.start_date.toISOString().slice(0, 10) : String(b.start_date).slice(0, 10),
+      end_date: b.end_date instanceof Date ? b.end_date.toISOString().slice(0, 10) : String(b.end_date).slice(0, 10),
+    })),
+  };
+
+  return res.status(200).json({ equipment });
+});
+
+const listMyEquipment = asyncHandler(async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT e.id, e.owner_id, e.title, e.category, e.sub_category, e.description,
+            e.price_per_day, e.location, e.image_url, e.is_available, e.created_at
+     FROM equipment e
+     WHERE e.owner_id = $1
+     ORDER BY e.created_at DESC, e.id`,
+    [req.user.id]
+  );
+  return res.status(200).json({ equipment: rows });
+});
+
+const listAllEquipmentAdmin = asyncHandler(async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT e.id, e.owner_id, e.title, e.category, e.sub_category, e.description,
+            e.price_per_day, e.location, e.image_url, e.is_available, e.created_at,
+            u.full_name AS owner_name, u.email AS owner_email
+     FROM equipment e
+     JOIN users u ON u.id = e.owner_id
+     ORDER BY e.created_at DESC, e.id`
+  );
+  return res.status(200).json({ equipment: rows });
 });
 
 const createEquipment = asyncHandler(async (req, res) => {
-  if (req.user.userType !== "owner" && req.user.userType !== "both") {
+  if (req.user.userType !== "owner" && req.user.userType !== "both" && req.user.userType !== "admin") {
     return res.status(403).json({ error: "Only owners can create equipment listings." });
   }
 
@@ -249,8 +291,54 @@ const updateEquipment = asyncHandler(async (req, res) => {
   return res.status(200).json({ equipment: rows[0] });
 });
 
+const adminUpdateEquipment = asyncHandler(async (req, res) => {
+  const id = parsePositiveInteger(req.params.id);
+  if (!id) {
+    return res.status(400).json({ error: "Equipment id must be a positive integer." });
+  }
 
-// Delete equipment (admin only)
+  const body = req.body || {};
+  const fields = Object.keys(EQUIPMENT_FIELDS).filter((field) =>
+    Object.prototype.hasOwnProperty.call(body, field)
+  );
+  if (fields.length === 0) {
+    return res.status(400).json({ error: "Provide at least one supported field to update." });
+  }
+
+  const errors = validateEquipmentInput(body, true);
+  if (errors.length > 0) {
+    return res.status(400).json({ error: "Invalid equipment listing.", details: errors });
+  }
+
+  const values = fields.map((field) => {
+    const value = body[field];
+    if (field === "category" && typeof value === "string") {
+      return normalizeCategory(value);
+    }
+    if (typeof value === "string") {
+      return value.trim();
+    }
+    return value;
+  });
+  values.push(id);
+
+  const assignments = fields.map((field, index) => `${EQUIPMENT_FIELDS[field].column} = $${index + 1}`);
+  const { rows } = await pool.query(
+    `UPDATE equipment
+     SET ${assignments.join(", ")}
+     WHERE id = $${values.length}
+     RETURNING id, owner_id, title, category, sub_category, description,
+               price_per_day, location, image_url, is_available, created_at`,
+    values
+  );
+
+  if (rows.length === 0) {
+    return res.status(404).json({ error: "Equipment listing not found." });
+  }
+
+  return res.status(200).json({ equipment: rows[0] });
+});
+
 const deleteEquipment = asyncHandler(async (req, res) => {
   const equipmentId = parsePositiveInteger(req.params.id);
   if (!equipmentId) {
@@ -263,4 +351,13 @@ const deleteEquipment = asyncHandler(async (req, res) => {
   res.status(200).json({ message: 'Equipment deleted.' });
 });
 
-module.exports = { listEquipment, getEquipmentById, createEquipment, updateEquipment, deleteEquipment };
+module.exports = {
+  listEquipment,
+  listMyEquipment,
+  listAllEquipmentAdmin,
+  getEquipmentById,
+  createEquipment,
+  updateEquipment,
+  adminUpdateEquipment,
+  deleteEquipment,
+};

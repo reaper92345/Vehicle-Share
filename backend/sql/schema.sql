@@ -11,6 +11,7 @@ CREATE TABLE users (
     phone_number VARCHAR(32) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     user_type user_type NOT NULL,
+    is_disabled BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -43,6 +44,8 @@ CREATE TABLE bookings (
     total_price NUMERIC(12, 2) NOT NULL CHECK (total_price >= 0),
     status booking_status NOT NULL DEFAULT 'Pending',
     payment_status VARCHAR(20) NOT NULL DEFAULT 'unpaid',
+    terms_accepted_at TIMESTAMPTZ,
+    deployment_location TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CHECK (end_date >= start_date)

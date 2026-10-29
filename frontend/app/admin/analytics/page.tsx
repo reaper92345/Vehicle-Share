@@ -1,5 +1,11 @@
+"use client";
+
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 type Stats = {
   totalUsers: number;
@@ -44,35 +50,29 @@ export default function AdminAnalytics() {
   if (loading) return <p className="p-6">Loading analytics...</p>;
   if (error) return <p className="p-6 text-red-600">{error}</p>;
 
+  const chartData = {
+    labels: ['Users', 'Equipment', 'Bookings', 'Revenue'],
+    datasets: [
+      {
+        label: 'Counts / Amount',
+        data: stats ? [stats.totalUsers, stats.totalEquipment, stats.activeBookings, stats.totalRevenue] : [],
+        backgroundColor: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444'],
+      },
+    ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: { position: 'top' as const },
+      title: { display: true, text: 'Admin Metrics Overview' },
+    },
+  };
+
   return (
     <section className="p-6">
       <h1 className="text-3xl font-bold mb-4">Analytics Dashboard</h1>
-import { Bar } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
-
-// Inside the component, after stats are fetched
-const chartData = {
-  labels: ['Users', 'Equipment', 'Bookings', 'Revenue'],
-  datasets: [
-    {
-      label: 'Counts / Amount',
-      data: stats ? [stats.totalUsers, stats.totalEquipment, stats.activeBookings, stats.totalRevenue] : [],
-      backgroundColor: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444'],
-    },
-  ],
-};
-
-const chartOptions = {
-  responsive: true,
-  plugins: {
-    legend: { position: 'top' as const },
-    title: { display: true, text: 'Admin Metrics Overview' },
-  },
-};
-
-// Render below the grid
-{stats && <Bar data={chartData} options={chartOptions} />}
+      {stats && <Bar data={chartData} options={chartOptions} />}
     </section>
   );
 }

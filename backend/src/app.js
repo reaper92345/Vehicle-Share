@@ -9,6 +9,7 @@ const bookingRoutes = require("./routes/booking.routes");
 const reviewRoutes = require("./routes/review.routes");
 const paymentRoutes = require("./routes/payments.routes");
 const adminRoutes = require("./routes/admin.routes");
+const userRoutes = require("./routes/user.routes");
 const { notFound, errorHandler } = require("./middleware/error.middleware");
 
 const app = express();
@@ -50,6 +51,7 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/users", userRoutes);
 app.use(notFound);
 app.use(errorHandler);
 

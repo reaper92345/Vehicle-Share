@@ -1,8 +1,9 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+import "./admin.css";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import jwt_decode from 'jwt-decode';
+import { jwtDecode as jwt_decode } from 'jwt-decode';
 
 
 
@@ -14,10 +15,11 @@ const AdminSidebar = () => (
     <h2 className="sidebar-title text-2xl font-bold mb-4">Admin Panel</h2>
     <nav className="sidebar-nav flex flex-col space-y-2">
       <Link href="/admin/dashboard" className="sidebar-link hover:bg-gray-700 p-2 rounded">Dashboard</Link>
-      <Link href="/admin/users" className="sidebar-link hover:bg-gray-700 p-2 rounded">User Management</Link>
-      <Link href="/admin/equipment" className="sidebar-link hover:bg-gray-700 p-2 rounded">Equipment Management</Link>
-      <Link href="/admin/bookings" className="sidebar-link hover:bg-gray-700 p-2 rounded">Bookings Overview</Link>
+      <Link href="/admin/users" className="sidebar-link hover:bg-gray-700 p-2 rounded">Users</Link>
+      <Link href="/admin/equipment" className="sidebar-link hover:bg-gray-700 p-2 rounded">Equipment</Link>
+      <Link href="/admin/bookings" className="sidebar-link hover:bg-gray-700 p-2 rounded">Rentals & payments</Link>
       <Link href="/admin/analytics" className="sidebar-link hover:bg-gray-700 p-2 rounded">Analytics</Link>
+      <Link href="/" className="sidebar-link hover:bg-gray-700 p-2 rounded">Back to site</Link>
     </nav>
   </aside>
 );
