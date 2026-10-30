@@ -10,7 +10,9 @@ import {
   StatWidget,
   MagneticButton,
   SmoothModal,
+  useNotification,
 } from "../../../components/smoothui";
+import { EquipmentTrackingMap } from "../../../components/EquipmentTrackingMap";
 
 import {
   Chart as ChartJS,
@@ -94,11 +96,12 @@ function deploymentStatus(booking: BookingSummary | undefined, available: boolea
 
 export default function ModernOwnerDashboard() {
   const router = useRouter();
+  const { success, error: notifyError, info: notifyInfo } = useNotification();
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [bookings, setBookings] = useState<BookingSummary[]>([]);
   const [users, setUsers] = useState<DirectoryUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"overview" | "deployments" | "payments" | "directory">("overview");
+  const [tab, setTab] = useState<"overview" | "deployments" | "tracking" | "payments" | "directory">("overview");
   const [user, setUser] = useState<{ full_name?: string; name?: string; role?: string; user_type?: string } | null>(null);
   const [userSearch, setUserSearch] = useState("");
 
@@ -395,6 +398,7 @@ export default function ModernOwnerDashboard() {
             tabs={[
               { id: "overview" as const, label: "Fleet Overview", icon: "🚜", badge: equipment.length },
               { id: "deployments" as const, label: "Deployment & Return Monitor", badge: activeDeployments.length, icon: "📍" },
+              { id: "tracking" as const, label: "Google Maps Telematics", icon: "🗺️" },
               { id: "payments" as const, label: "Payment Ledger", badge: paidBookings.length, icon: "💳" },
               { id: "directory" as const, label: "User Directory", icon: "👥" },
             ]}
@@ -540,7 +544,18 @@ export default function ModernOwnerDashboard() {
           </section>
         )}
 
-        {/* TAB 3: PAYMENT LEDGER */}
+        {/* TAB 3: LIVE GPS TELEMATICS */}
+        {!loading && tab === "tracking" && (
+          <section className="space-y-4">
+            <EquipmentTrackingMap
+              equipmentTitle={equipment.length > 0 ? equipment[0].title : "Volvo EC950F Crawler Heavy Excavator"}
+              equipmentCategory={equipment.length > 0 ? equipment[0].category : "Construction"}
+              selectedDestinationName="Kathmandu Ring Road Project Site"
+            />
+          </section>
+        )}
+
+        {/* TAB 4: PAYMENT LEDGER */}
         {!loading && tab === "payments" && (
           <section>
             <div className="flex items-center justify-between mb-4">

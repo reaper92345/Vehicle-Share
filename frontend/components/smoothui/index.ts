@@ -1,6 +1,6 @@
-export { AnimatedTabs } from "./AnimatedTabs";
-export { MagneticButton } from "./MagneticButton";
-export { TiltCard } from "./TiltCard";
-export { SmoothModal } from "./SmoothModal";
-export { StatWidget } from "./StatWidget";
-
+export * from "./AnimatedTabs";
+export * from "./MagneticButton";
+export * from "./TiltCard";
+export * from "./SmoothModal";
+export * from "./StatWidget";
+export * from "./NotificationProvider";

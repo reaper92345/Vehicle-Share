@@ -138,12 +138,12 @@ export default function EquipmentListPage() {
           <button
             className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition shadow-sm ${
               activeTab === "renter"
-                ? "bg-slate-900 text-cyan-400 border border-cyan-500/40 shadow-cyan-500/10"
+                ? "bg-brand-700 text-white shadow-brand-700/20"
                 : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
             }`}
             onClick={() => setActiveTab("renter")}
           >
-            💎 Glass Lister Dashboard
+            📊 Financial Summary
           </button>
         )}
       </div>

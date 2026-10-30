@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import PortalNav from "../../../components/PortalNav";
-import { AnimatedTabs, StatWidget, MagneticButton } from "../../../components/smoothui";
+import { AnimatedTabs, StatWidget, MagneticButton, useNotification } from "../../../components/smoothui";
+import { EquipmentTrackingMap } from "../../../components/EquipmentTrackingMap";
 
 interface Booking {
   id: number;
@@ -40,10 +41,11 @@ function daysUntil(dateValue: string) {
 
 export default function HireDashboard() {
   const router = useRouter();
+  const { success, error: notifyError, taxInvoice } = useNotification();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [users, setUsers] = useState<DirectoryUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"overview" | "active" | "payments" | "directory">("overview");
+  const [tab, setTab] = useState<"overview" | "active" | "tracking" | "payments" | "directory">("overview");
   const [user, setUser] = useState<{ full_name?: string; name?: string } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -126,9 +128,9 @@ export default function HireDashboard() {
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
-      setMessage(data.email?.sent ? "Receipt emailed again." : "Receipt generated. Email is in log/preview mode.");
+      taxInvoice(`INV-${String(id).padStart(6, "0")}`, user?.full_name || "your account email", `${apiUrl}/api/payments/${id}/receipt`);
     } else {
-      setMessage(data.error || "Could not resend receipt.");
+      notifyError("Receipt Dispatch Error", data.error || "Could not resend tax receipt.");
     }
   };
 
@@ -138,9 +140,10 @@ export default function HireDashboard() {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setMessage(data.error || "Could not download receipt.");
+      notifyError("Invoice Load Failed", data.error || "Could not download receipt.");
       return;
     }
+    success("Tax Invoice Opened", "Opening official IRD VAT tax invoice in a new tab.");
     const html = await res.text();
     const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
@@ -196,6 +199,7 @@ export default function HireDashboard() {
             tabs={[
               { id: "overview" as const, label: "Overview", icon: "📊" },
               { id: "active" as const, label: "Active machinery", badge: active.length, icon: "🚜" },
+              { id: "tracking" as const, label: "Live Telematics & GPS", icon: "🗺️" },
               { id: "payments" as const, label: "Payments", badge: paid.length, icon: "💳" },
               { id: "directory" as const, label: "Providers", icon: "👥" },
             ]}
@@ -254,6 +258,15 @@ export default function HireDashboard() {
               );
             })}
             {active.length === 0 && <p className="text-slate-500">No active machinery right now.</p>}
+          </div>
+        )}
+
+        {!loading && tab === "tracking" && (
+          <div className="space-y-4">
+            <EquipmentTrackingMap
+              equipmentTitle={active.length > 0 ? active[0].equipment_title : "Volvo EC950F Crawler Heavy Excavator"}
+              selectedDestinationName={active.length > 0 ? active[0].deployment_location : "Kathmandu Ring Road Project Site"}
+            />
           </div>
         )}
 

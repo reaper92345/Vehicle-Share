@@ -4,6 +4,8 @@ import { useEffect, useState, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { jwtDecode } from "jwt-decode";
+import { SmoothModal, MagneticButton, useNotification } from "../../../components/smoothui";
+import { EquipmentTrackingMap, LocationPoint, calculateMobilizationCharge, calculateNepalRoadDistanceKm, DEPOT_ORIGIN } from "../../../components/EquipmentTrackingMap";
 
 interface BookedRange {
   start_date: string;
@@ -28,6 +30,7 @@ interface Equipment {
 
 function CreateBookingContent() {
   const router = useRouter();
+  const { success, error: notifyError, warning: notifyWarning } = useNotification();
   const searchParams = useSearchParams();
   const equipmentId = searchParams.get("equipment_id");
 
@@ -39,7 +42,9 @@ function CreateBookingContent() {
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<{ full_name?: string; name?: string; email?: string; user_type?: string; role?: string } | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [deploymentLocation, setDeploymentLocation] = useState("");
+  const [deploymentLocation, setDeploymentLocation] = useState("Kathmandu Ring Road Project Site");
+  const [transportDistanceKm, setTransportDistanceKm] = useState(18);
+  const [transportationFee, setTransportationFee] = useState(9500);
   const [showTerms, setShowTerms] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
@@ -136,12 +141,16 @@ function CreateBookingContent() {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
   }, [startDate, endDate]);
 
-  // Calculate estimated total price
-  const estimatedPrice = useMemo(() => {
+  // Calculate estimated total price including transportation mobilization
+  const rentalBasePrice = useMemo(() => {
     if (!equipment || rentalDays <= 0) return 0;
     const daily = Number(equipment.price_per_day) || 0;
     return daily * rentalDays;
   }, [equipment, rentalDays]);
+
+  const estimatedPrice = useMemo(() => {
+    return rentalBasePrice + transportationFee;
+  }, [rentalBasePrice, transportationFee]);
 
   // Check if selected dates conflict with existing approved/active bookings
   const dateConflict = useMemo(() => {
@@ -231,6 +240,14 @@ function CreateBookingContent() {
       });
 
       if (res.ok) {
+        success(
+          "Booking Request Submitted!",
+          `Your reservation for ${equipment?.title} at ${deploymentLocation} (${transportDistanceKm} km) is pending owner approval.`,
+          {
+            label: "View All Bookings",
+            onClick: () => router.push("/bookings"),
+          }
+        );
         router.push("/bookings");
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -437,6 +454,20 @@ function CreateBookingContent() {
                     </div>
                   </div>
                 )}
+
+                {/* Google Map Live Tracking & Transit Fee Calculator */}
+                <div className="mt-6">
+                  <EquipmentTrackingMap
+                    equipmentTitle={equipment.title}
+                    equipmentCategory={equipment.category}
+                    selectedDestinationName={deploymentLocation}
+                    onDestinationChange={(site, distKm, fee) => {
+                      setDeploymentLocation(site.name);
+                      setTransportDistanceKm(distKm);
+                      setTransportationFee(fee);
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
@@ -500,6 +531,14 @@ function CreateBookingContent() {
                     <span>Daily Rate:</span>
                     <span>रु{Number(equipment.price_per_day).toLocaleString()}</span>
                   </div>
+                  <div className="flex justify-between text-xs text-slate-600">
+                    <span>Machine Rental Subtotal:</span>
+                    <span className="font-semibold text-slate-800">रु{rentalBasePrice.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-slate-600 border-t border-slate-200/60 pt-1.5">
+                    <span>Mobilization & Haulage ({transportDistanceKm} km):</span>
+                    <span className="font-semibold text-brand-700">+ रु{transportationFee.toLocaleString()}</span>
+                  </div>
                   <div className="border-t border-slate-200 pt-2 flex justify-between items-center text-sm font-bold text-slate-900">
                     <span>Estimated Total:</span>
                     <span className="text-base text-brand-700">
@@ -521,21 +560,39 @@ function CreateBookingContent() {
                   />
                 </div>
 
-                <label className="flex items-start gap-2 text-xs text-slate-600">
-                  <input
-                    type="checkbox"
-                    className="mt-0.5"
-                    checked={termsAccepted}
-                    onChange={(e) => setTermsAccepted(e.target.checked)}
-                  />
-                  <span>
-                    I have read and agree to the{" "}
-                    <button type="button" className="font-semibold text-brand-700 underline" onClick={() => setShowTerms(true)}>
-                      EquipShare Rental Agreement & Terms
+                <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <label className="flex items-start gap-2.5 text-xs text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-700 focus:ring-brand-500 cursor-pointer"
+                        checked={termsAccepted}
+                        onChange={(e) => setTermsAccepted(e.target.checked)}
+                      />
+                      <span className="leading-relaxed">
+                        I confirm that I have reviewed and agree to the{" "}
+                        <button
+                          type="button"
+                          className="font-bold text-brand-700 underline hover:text-brand-900 inline"
+                          onClick={() => setShowTerms(true)}
+                        >
+                          EquipShare Rental Agreement & Terms
+                        </button>
+                        .
+                      </span>
+                    </label>
+                  </div>
+                  {!termsAccepted && (
+                    <button
+                      type="button"
+                      onClick={() => setShowTerms(true)}
+                      className="mt-2.5 inline-flex items-center gap-1.5 text-[11px] font-semibold text-brand-700 hover:text-brand-900 bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-100"
+                    >
+                      <span>📜</span>
+                      <span>Review Terms & Conditions (Required before booking)</span>
                     </button>
-                    .
-                  </span>
-                </label>
+                  )}
+                </div>
 
                 {/* Submit Action */}
                 <button
@@ -554,6 +611,8 @@ function CreateBookingContent() {
                     </>
                   ) : !equipment.is_available ? (
                     "Equipment Unavailable"
+                  ) : !termsAccepted && rentalDays > 0 ? (
+                    "Review Terms & Request Booking"
                   ) : rentalDays > 0 ? (
                     `Request Booking • रु${estimatedPrice.toLocaleString()}`
                   ) : (
@@ -575,43 +634,95 @@ function CreateBookingContent() {
         )}
       </div>
 
-      {showTerms && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="card max-h-[90vh] w-full max-w-2xl overflow-y-auto p-6">
-            <h3 className="text-xl font-bold text-slate-900">EquipShare Rental Agreement & Terms</h3>
-            <p className="mt-1 text-xs text-slate-500">Please review these terms before submitting a booking request.</p>
-            <div className="mt-4 space-y-3 text-sm text-slate-700 leading-relaxed">
-              <p><strong>1. Machinery condition on delivery.</strong> The hire customer must inspect the equipment on delivery and report damage, missing parts, or unsafe conditions immediately. Acceptance of delivery confirms the machine was received in working order unless defects are noted in writing.</p>
-              <p><strong>2. Fuel policy & certified operator liability.</strong> Equipment must be returned with the same fuel level as at handover unless otherwise agreed. Only certified, licensed operators may run the machinery. The hire customer is liable for operator negligence, accidents, and third-party injury arising from misuse.</p>
-              <p><strong>3. Security deposit & return delay penalties.</strong> The owner may require a security deposit. Late returns beyond the agreed end date incur a daily penalty equal to the listed daily rate plus 20%, and the owner may recover reasonable recovery costs.</p>
-              <p><strong>4. Cancellation & refunds.</strong> Cancellation before owner approval is free. After approval, cancellations more than 48 hours before start may receive a 50% refund of the rental fee. Cancellations inside 48 hours, no-shows, and completed paid rentals are non-refundable except where the owner cannot deliver the equipment.</p>
-              <p><strong>5. Payment.</strong> QR payment confirmation finalizes the rental charges in NPR (रु). An invoice/receipt is emailed to the hire customer after successful payment.</p>
+      {/* Terms & Conditions Modal using SmoothModal */}
+      <SmoothModal
+        isOpen={showTerms}
+        onClose={() => setShowTerms(false)}
+        title="EquipShare Rental Agreement & Terms"
+        className="max-w-2xl"
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-slate-500">
+            Please carefully review the following policies and liabilities prior to requesting machinery rental.
+          </p>
+
+          <div className="max-h-[55vh] overflow-y-auto pr-2 space-y-3.5 text-xs text-slate-700 leading-relaxed border-y border-slate-100 py-3">
+            <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80">
+              <h4 className="font-bold text-slate-900 mb-1 flex items-center gap-1.5 text-xs">
+                <span>🔍</span> 1. Machinery Condition on Handover & Inspection
+              </h4>
+              <p>
+                The hire customer is obligated to thoroughly inspect the machine at the designated project site/depot upon delivery. Pre-existing wear, fluid leaks, structural damage, or missing attachments must be recorded in writing with photographs prior to operation. Operating the machine constitutes acceptance of its sound working order.
+              </p>
             </div>
-            <label className="mt-5 flex items-start gap-2 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                className="mt-1"
-                checked={termsAccepted}
-                onChange={(e) => setTermsAccepted(e.target.checked)}
-              />
-              <span>I have read and agree to the EquipShare Rental Agreement & Terms.</span>
-            </label>
-            <div className="mt-5 flex justify-end gap-2">
-              <button type="button" className="rounded-xl border border-slate-200 px-4 py-2 text-sm" onClick={() => setShowTerms(false)}>
-                Close
-              </button>
-              <button
-                type="button"
-                className="btn-primary text-sm"
-                disabled={!termsAccepted}
-                onClick={() => setShowTerms(false)}
-              >
-                Agree and continue
-              </button>
+
+            <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80">
+              <h4 className="font-bold text-slate-900 mb-1 flex items-center gap-1.5 text-xs">
+                <span>⛽</span> 2. Fuel Policy & Certified Operator Liability
+              </h4>
+              <p>
+                Equipment is delivered with a documented fuel level and must be returned with an equivalent level; refueling surcharges apply otherwise. Only certified, licensed heavy-machinery operators may handle the equipment. The hire customer assumes full legal and financial liability for operator negligence, project-site safety infractions, and third-party damages.
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80">
+              <h4 className="font-bold text-slate-900 mb-1 flex items-center gap-1.5 text-xs">
+                <span>🛡️</span> 3. Security Deposit & Return Delay Penalties
+              </h4>
+              <p>
+                Equipment owners reserve the right to request a refundable damage deposit. Delays past the agreed end date without approved extensions will incur a daily penalty rate of the base daily fee plus 20%, along with any associated dispatch/standby recovery costs.
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80">
+              <h4 className="font-bold text-slate-900 mb-1 flex items-center gap-1.5 text-xs">
+                <span>⏱️</span> 4. Cancellation & Refund Policy
+              </h4>
+              <p>
+                Cancellations requested prior to owner approval are 100% free with no penalty. Cancellations made more than 48 hours prior to start date receive a 50% refund. Cancellations made inside 48 hours or after equipment mobilization are non-refundable.
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80">
+              <h4 className="font-bold text-slate-900 mb-1 flex items-center gap-1.5 text-xs">
+                <span>🧾</span> 5. Payment Confirmation & Electronic Invoice Receipt
+              </h4>
+              <p>
+                Rental transactions are processed in Nepalese Rupees (NPR रु) via secure QR payment settlement. Upon payment confirmation, an official invoice receipt detailing the rental timeline, equipment specifications, and transaction ID is automatically delivered to the hire customer's registered email.
+              </p>
             </div>
           </div>
+
+          <label className="flex items-start gap-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200 p-3 text-xs text-slate-800 cursor-pointer">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 rounded border-emerald-400 text-brand-700 focus:ring-brand-500 cursor-pointer"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+            />
+            <span className="font-medium leading-relaxed">
+              I have read, understood, and accept the EquipShare Rental Agreement & Terms in full.
+            </span>
+          </label>
+
+          <div className="flex justify-end gap-2.5 pt-1">
+            <button
+              type="button"
+              className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition"
+              onClick={() => setShowTerms(false)}
+            >
+              Close
+            </button>
+            <MagneticButton
+              disabled={!termsAccepted}
+              onClick={() => setShowTerms(false)}
+              className="btn-primary text-xs py-2 px-5 rounded-xl"
+            >
+              Confirm Agreement & Continue
+            </MagneticButton>
+          </div>
         </div>
-      )}
+      </SmoothModal>
     </main>
   );
 }

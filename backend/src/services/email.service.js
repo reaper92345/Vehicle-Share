@@ -5,11 +5,16 @@ let cachedPreviewUrl = null;
 
 function formatNpr(amount) {
   const value = Number(amount) || 0;
-  return `रु${value.toLocaleString("en-NP", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `रु ${value.toLocaleString("en-NP", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function invoiceNumber(bookingId) {
   return `INV-${String(bookingId).padStart(6, "0")}`;
+}
+
+function transactionId(bookingId) {
+  const hex = Number(bookingId * 987654321).toString(16).toUpperCase().padStart(10, "0");
+  return `TXN-${hex}`;
 }
 
 function formatDate(value) {
@@ -18,16 +23,71 @@ function formatDate(value) {
   return raw.slice(0, 10);
 }
 
+// Convert NPR number into formal English words
+function numberToWords(amount) {
+  const num = Math.round(Number(amount) || 0);
+  if (num === 0) return "Zero Rupees Only";
+
+  const a = [
+    "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+    "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
+    "Seventeen", "Eighteen", "Nineteen",
+  ];
+  const b = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+  function convertSection(n) {
+    let str = "";
+    if (n >= 100) {
+      str += a[Math.floor(n / 100)] + " Hundred ";
+      n %= 100;
+    }
+    if (n >= 20) {
+      str += b[Math.floor(n / 10)] + " ";
+      n %= 10;
+    }
+    if (n > 0) {
+      str += a[n] + " ";
+    }
+    return str;
+  }
+
+  let words = "";
+  let n = num;
+
+  if (n >= 10000000) {
+    words += convertSection(Math.floor(n / 10000000)) + "Crore ";
+    n %= 10000000;
+  }
+  if (n >= 100000) {
+    words += convertSection(Math.floor(n / 100000)) + "Lakh ";
+    n %= 100000;
+  }
+  if (n >= 1000) {
+    words += convertSection(Math.floor(n / 1000)) + "Thousand ";
+    n %= 1000;
+  }
+  if (n > 0) {
+    words += convertSection(n);
+  }
+
+  return `${words.trim()} Nepalese Rupees Only`;
+}
+
+// High-fidelity Classic Black & White Tax Invoice / Receipt Template
 function buildReceiptHtml(payload) {
   const {
     invoiceNo,
+    txnId,
     issuedAt,
     equipmentTitle,
-    equipmentImage,
     startDate,
     endDate,
     durationDays,
+    dailyRate,
     totalPrice,
+    taxableAmount,
+    vatAmount,
+    amountWords,
     ownerName,
     ownerEmail,
     ownerPhone,
@@ -38,78 +98,344 @@ function buildReceiptHtml(payload) {
     bookingId,
   } = payload;
 
-  const imageBlock = equipmentImage
-    ? `<img src="${equipmentImage}" alt="${equipmentTitle}" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;" />`
-    : `<div style="height:120px;background:#e2e8f0;border-radius:12px;text-align:center;line-height:120px;color:#64748b;">No image</div>`;
-
   return `<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${invoiceNo} · EquipShare</title>
+  <title>${invoiceNo} · TAX INVOICE · EquipShare</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 30px 15px;
+      background: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #000000;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    @media print {
+      body {
+        background: #ffffff !important;
+        padding: 0 !important;
+      }
+      .invoice-box {
+        border: 2px solid #000000 !important;
+        box-shadow: none !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+    table {
+      border-collapse: collapse;
+    }
+    .invoice-box {
+      max-width: 760px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 2px solid #000000;
+      padding: 32px 36px;
+      box-sizing: border-box;
+    }
+    .header-title {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin: 0;
+    }
+    .header-sub {
+      font-size: 13px;
+      font-weight: bold;
+      margin: 4px 0 0 0;
+    }
+    .header-address {
+      font-size: 11px;
+      line-height: 1.4;
+      margin: 4px 0 0 0;
+    }
+    .tax-badge {
+      border: 2px solid #000000;
+      padding: 8px 12px;
+      text-align: right;
+      display: inline-block;
+    }
+    .meta-bar {
+      border-top: 2px solid #000000;
+      border-bottom: 2px solid #000000;
+      padding: 8px 0;
+      margin: 18px 0;
+      font-size: 11px;
+    }
+    .parties-table {
+      width: 100%;
+      margin-bottom: 20px;
+      font-size: 11px;
+    }
+    .parties-col {
+      width: 50%;
+      vertical-align: top;
+      padding: 8px 12px;
+      border: 1px solid #000000;
+    }
+    .items-table {
+      width: 100%;
+      font-size: 11px;
+      border: 1px solid #000000;
+      margin-bottom: 16px;
+    }
+    .items-table th {
+      background: #ffffff;
+      border-bottom: 2px solid #000000;
+      border-right: 1px solid #000000;
+      padding: 8px 10px;
+      text-align: left;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .items-table td {
+      border-bottom: 1px solid #000000;
+      border-right: 1px solid #000000;
+      padding: 10px;
+      vertical-align: top;
+    }
+    .items-table th:last-child, .items-table td:last-child {
+      border-right: none;
+    }
+    .calc-table {
+      width: 100%;
+      font-size: 11px;
+      border-collapse: collapse;
+    }
+    .calc-table td {
+      padding: 4px 0;
+    }
+    .total-row td {
+      border-top: 2px solid #000000;
+      border-bottom: 2px solid #000000;
+      padding: 8px 0;
+      font-weight: 900;
+      font-size: 14px;
+    }
+    .words-box {
+      border: 1px solid #000000;
+      padding: 10px 12px;
+      font-size: 11px;
+      background: #ffffff;
+      margin-bottom: 12px;
+    }
+    .stamp-box {
+      border: 2px solid #000000;
+      width: 130px;
+      height: 60px;
+      text-align: center;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+    }
+    .print-btn {
+      background: #000000;
+      color: #ffffff;
+      padding: 8px 18px;
+      border: none;
+      font-size: 12px;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 16px;
+    }
+  </style>
 </head>
-<body style="margin:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:24px 12px;">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
-          <tr>
-            <td style="background:#1d4ed8;color:#ffffff;padding:24px 28px;">
-              <p style="margin:0;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;opacity:0.85;">EquipShare</p>
-              <h1 style="margin:6px 0 0;font-size:24px;">Payment receipt</h1>
-              <p style="margin:8px 0 0;font-size:14px;">Invoice ${invoiceNo} · ${issuedAt}</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:24px 28px;">
-              ${imageBlock}
-              <h2 style="margin:18px 0 4px;font-size:20px;">${equipmentTitle}</h2>
-              <p style="margin:0;color:#64748b;font-size:14px;">Booking #${bookingId}</p>
+<body>
 
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;font-size:14px;">
-                <tr>
-                  <td style="padding:8px 0;border-bottom:1px solid #e2e8f0;color:#64748b;">Rental period</td>
-                  <td style="padding:8px 0;border-bottom:1px solid #e2e8f0;text-align:right;">${startDate} → ${endDate}</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px 0;border-bottom:1px solid #e2e8f0;color:#64748b;">Duration</td>
-                  <td style="padding:8px 0;border-bottom:1px solid #e2e8f0;text-align:right;">${durationDays} day${durationDays === 1 ? "" : "s"}</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px 0;border-bottom:1px solid #e2e8f0;color:#64748b;">Deployment</td>
-                  <td style="padding:8px 0;border-bottom:1px solid #e2e8f0;text-align:right;">${deploymentLocation || "—"}</td>
-                </tr>
-                <tr>
-                  <td style="padding:12px 0;font-weight:700;">Total paid (NPR)</td>
-                  <td style="padding:12px 0;text-align:right;font-weight:700;color:#1d4ed8;font-size:18px;">${formatNpr(totalPrice)}</td>
-                </tr>
-              </table>
+  <div class="no-print" style="max-width: 760px; margin: 0 auto 12px auto; display: flex; justify-content: space-between; align-items: center;">
+    <button onclick="window.print()" class="print-btn">🖨️ Print / Save as PDF</button>
+    <span style="font-size: 11px; color: #475569;">Official Black & White IRD Tax Invoice</span>
+  </div>
 
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:8px;">
-                <tr>
-                  <td width="50%" valign="top" style="padding-right:8px;">
-                    <p style="margin:16px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;">Renter (Hire)</p>
-                    <p style="margin:0;font-weight:700;">${renterName}</p>
-                    <p style="margin:4px 0 0;font-size:13px;color:#475569;">${renterEmail || ""}</p>
-                    <p style="margin:4px 0 0;font-size:13px;color:#475569;">${renterPhone || ""}</p>
-                  </td>
-                  <td width="50%" valign="top" style="padding-left:8px;">
-                    <p style="margin:16px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;">Owner (Lister)</p>
-                    <p style="margin:0;font-weight:700;">${ownerName}</p>
-                    <p style="margin:4px 0 0;font-size:13px;color:#475569;">${ownerEmail || ""}</p>
-                    <p style="margin:4px 0 0;font-size:13px;color:#475569;">${ownerPhone || ""}</p>
-                  </td>
-                </tr>
-              </table>
+  <div class="invoice-box">
+    
+    <!-- Top Header -->
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td valign="top" style="width: 60%;">
+          <h1 class="header-title">EQUIPSHARE</h1>
+          <p class="header-sub">EquipShare Marketplace Nepal Pvt. Ltd.</p>
+          <p class="header-address">
+            Jagati-7, Bhaktapur, Bagmati Province, Nepal<br/>
+            Tel: +977-1-6612345 | Web: www.equipshare.com<br/>
+            Email: billing@equipshare.com
+          </p>
+        </td>
+        <td valign="top" align="right" style="width: 40%;">
+          <div class="tax-badge">
+            <div style="font-size: 14px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase;">
+              TAX INVOICE
+            </div>
+            <div style="font-size: 12px; font-weight: bold; margin-top: 2px;">
+              कर बिजक
+            </div>
+            <div style="font-size: 13px; font-weight: 900; border-top: 1px solid #000; margin-top: 6px; padding-top: 4px;">
+              PAN / VAT: 610394821
+            </div>
+            <div style="font-size: 10px; margin-top: 2px;">
+              Company Reg: 284910/080/081
+            </div>
+          </div>
+        </td>
+      </tr>
+    </table>
 
-              <p style="margin:24px 0 0;font-size:12px;color:#94a3b8;">This receipt was generated after QR payment confirmation on EquipShare. Keep it for your records.</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
+    <!-- Metadata Strip -->
+    <div class="meta-bar">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td><strong>Invoice No:</strong> ${invoiceNo}</td>
+          <td><strong>Issue Date:</strong> ${issuedAt}</td>
+          <td><strong>Payment:</strong> PAID (QR/Fonepay)</td>
+          <td align="right"><strong>Txn Ref:</strong> ${txnId}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Parties Details -->
+    <table class="parties-table" cellpadding="0" cellspacing="0">
+      <tr>
+        <td class="parties-col" style="border-right: none;">
+          <div style="font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 6px;">
+            BILLED TO (HIRE CUSTOMER / RENTER):
+          </div>
+          <div style="font-size: 13px; font-weight: 800;">${renterName || "Valued Customer"}</div>
+          <div style="margin-top: 4px; line-height: 1.5;">
+            <strong>Email:</strong> ${renterEmail || "—"}<br/>
+            <strong>Contact:</strong> ${renterPhone || "—"}<br/>
+            <strong>Project Site:</strong> ${deploymentLocation || "Confirmed Project Site"}<br/>
+            <strong>Buyer PAN:</strong> Consumer / Unregistered
+          </div>
+        </td>
+        <td class="parties-col">
+          <div style="font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 6px;">
+            ON BEHALF OF (EQUIPMENT OWNER):
+          </div>
+          <div style="font-size: 13px; font-weight: 800;">${ownerName || "EquipShare Verified Host"}</div>
+          <div style="margin-top: 4px; line-height: 1.5;">
+            <strong>Email:</strong> ${ownerEmail || "—"}<br/>
+            <strong>Contact:</strong> ${ownerPhone || "—"}<br/>
+            <strong>Booking Ref:</strong> #ES-${bookingId}<br/>
+            <strong>Depot:</strong> Jagati, Bhaktapur
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Items Table -->
+    <table class="items-table" cellpadding="0" cellspacing="0">
+      <thead>
+        <tr>
+          <th style="width: 5%; text-align: center;">S.N.</th>
+          <th style="width: 48%;">Description of Machinery / Service</th>
+          <th style="width: 12%; text-align: center;">Duration</th>
+          <th style="width: 17%; text-align: right;">Daily Rate</th>
+          <th style="width: 18%; text-align: right;">Gross Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="text-align: center;">1</td>
+          <td>
+            <div style="font-size: 13px; font-weight: 900;">${equipmentTitle}</div>
+            <div style="font-size: 10px; margin-top: 3px;">
+              Rental Period: ${startDate} to ${endDate} (${durationDays} Days)<br/>
+              Operational Deployment: ${deploymentLocation || "Verified Jobsite"}
+            </div>
+          </td>
+          <td style="text-align: center;">
+            ${durationDays} Day${durationDays === 1 ? "" : "s"}
+          </td>
+          <td style="text-align: right;">
+            ${formatNpr(dailyRate)}
+          </td>
+          <td style="text-align: right; font-weight: 800;">
+            ${formatNpr(totalPrice)}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Calculation Summary & Words -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+      <tr>
+        <td width="55%" valign="top" style="padding-right: 20px;">
+          <div class="words-box">
+            <div style="font-weight: 900; text-transform: uppercase; font-size: 10px; margin-bottom: 3px;">
+              Amount in Words (अक्षरूपी):
+            </div>
+            <div style="font-style: italic; font-weight: 700;">
+              "${amountWords}"
+            </div>
+          </div>
+          <div style="font-size: 10px; line-height: 1.4; border: 1px dashed #000; padding: 6px 10px;">
+            <strong>Declaration:</strong> Certified that this invoice reflects the actual hire fee charged for the equipment specified. Goods and services tax calculated in accordance with the Nepal Value Added Tax (VAT) Act, 2052.
+          </div>
+        </td>
+        <td width="45%" valign="top">
+          <table class="calc-table">
+            <tr>
+              <td>Taxable Amount (करयोग्य रकम):</td>
+              <td align="right" style="font-weight: 700;">${formatNpr(taxableAmount)}</td>
+            </tr>
+            <tr>
+              <td>13% VAT (मू.अ.कर १३%):</td>
+              <td align="right" style="font-weight: 700;">${formatNpr(vatAmount)}</td>
+            </tr>
+            <tr>
+              <td>Non-Taxable Amount / Deposit:</td>
+              <td align="right">रु 0.00</td>
+            </tr>
+            <tr class="total-row">
+              <td>Grand Total (कुल जम्मा):</td>
+              <td align="right">${formatNpr(totalPrice)}</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Bottom Signatures & Seal -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-top: 1px solid #000; padding-top: 14px;">
+      <tr>
+        <td width="60%" valign="bottom">
+          <p style="font-size: 9px; line-height: 1.4; margin: 0;">
+            This is a computer-generated commercial tax invoice recognized under Nepal IRD rules.<br/>
+            EquipShare Marketplace Nepal Pvt. Ltd. · Jagati-7, Bhaktapur
+          </p>
+        </td>
+        <td width="40%" align="right" valign="bottom">
+          <div style="text-align: center; display: inline-block;">
+            <div class="stamp-box">
+              <span>★ EQUIPSHARE ★</span>
+              <span style="border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 1px 0; margin: 2px 0;">PAID & VERIFIED</span>
+              <span>BHAKTAPUR</span>
+            </div>
+            <div style="border-top: 1px solid #000; margin-top: 8px; padding-top: 4px; font-size: 10px; font-weight: 800;">
+              Authorized Billing Signatory
+            </div>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+  </div>
+
 </body>
 </html>`;
 }
@@ -123,15 +449,28 @@ function durationDays(startDate, endDate) {
 
 function mapBookingToReceipt(row) {
   const invoiceNo = invoiceNumber(row.id);
+  const txnId = transactionId(row.id);
+  const days = durationDays(row.start_date, row.end_date);
+  const grossTotal = Number(row.total_price) || 0;
+
+  // 13% VAT calculation formula: Gross = Taxable * 1.13
+  const taxableAmount = Math.round((grossTotal / 1.13) * 100) / 100;
+  const vatAmount = Math.round((grossTotal - taxableAmount) * 100) / 100;
+  const dailyRate = Math.round((grossTotal / days) * 100) / 100;
+
   return {
     invoiceNo,
+    txnId,
     issuedAt: formatDate(new Date()),
     equipmentTitle: row.equipment_title,
-    equipmentImage: row.image_url,
     startDate: formatDate(row.start_date),
     endDate: formatDate(row.end_date),
-    durationDays: durationDays(row.start_date, row.end_date),
-    totalPrice: row.total_price,
+    durationDays: days,
+    dailyRate,
+    totalPrice: grossTotal,
+    taxableAmount,
+    vatAmount,
+    amountWords: numberToWords(grossTotal),
     ownerName: row.owner_name,
     ownerEmail: row.owner_email,
     ownerPhone: row.owner_phone,
@@ -140,7 +479,6 @@ function mapBookingToReceipt(row) {
     renterPhone: row.renter_phone,
     deploymentLocation: row.deployment_location || row.location,
     bookingId: row.id,
-    html: null,
   };
 }
 
@@ -177,7 +515,7 @@ async function getTransport() {
 async function sendPaymentReceiptEmail(bookingRow) {
   const mapped = mapBookingToReceipt(bookingRow);
   const html = buildReceiptHtml(mapped);
-  const subject = `EquipShare receipt ${mapped.invoiceNo} — ${mapped.equipmentTitle}`;
+  const subject = `TAX INVOICE ${mapped.invoiceNo} · EquipShare [PAN: 610394821] — ${mapped.equipmentTitle}`;
   const to = bookingRow.renter_email;
 
   if (!to) {
@@ -186,20 +524,20 @@ async function sendPaymentReceiptEmail(bookingRow) {
 
   const transport = await getTransport();
   if (!transport) {
-    console.log("[email.service] SMTP not configured. Receipt preview:");
+    console.log("[email.service] SMTP not configured. Tax invoice preview:");
     console.log(`To: ${to}`);
     console.log(`Subject: ${subject}`);
     console.log(html);
-    return { sent: false, mode: "log", invoiceNo: mapped.invoiceNo, html };
+    return { sent: false, mode: "log", invoiceNo: mapped.invoiceNo, txnId: mapped.txnId, html };
   }
 
   const info = await transport.sendMail({
-    from: process.env.SMTP_FROM || "EquipShare <receipts@equipshare.local>",
+    from: process.env.SMTP_FROM || '"EquipShare Billing" <billing@equipshare.com>',
     to,
     cc: bookingRow.owner_email || undefined,
     subject,
     html,
-    text: `${subject}\nTotal paid: ${formatNpr(mapped.totalPrice)}\n${mapped.startDate} to ${mapped.endDate}`,
+    text: `${subject}\nTotal Paid: ${formatNpr(mapped.totalPrice)}\nTaxable: ${formatNpr(mapped.taxableAmount)} | VAT (13%): ${formatNpr(mapped.vatAmount)}\n${mapped.startDate} to ${mapped.endDate}`,
   });
 
   cachedPreviewUrl = nodemailer.getTestMessageUrl(info) || cachedPreviewUrl;
@@ -210,6 +548,7 @@ async function sendPaymentReceiptEmail(bookingRow) {
   return {
     sent: true,
     invoiceNo: mapped.invoiceNo,
+    txnId: mapped.txnId,
     messageId: info.messageId,
     previewUrl: cachedPreviewUrl || undefined,
     html,

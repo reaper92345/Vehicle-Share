@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>INV-000001 · TAX INVOICE · EquipShare</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 30px 15px;
+      background: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #000000;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    @media print {
+      body {
+        background: #ffffff !important;
+        padding: 0 !important;
+      }
+      .invoice-box {
+        border: 2px solid #000000 !important;
+        box-shadow: none !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+    table {
+      border-collapse: collapse;
+    }
+    .invoice-box {
+      max-width: 760px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 2px solid #000000;
+      padding: 32px 36px;
+      box-sizing: border-box;
+    }
+    .header-title {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin: 0;
+    }
+    .header-sub {
+      font-size: 13px;
+      font-weight: bold;
+      margin: 4px 0 0 0;
+    }
+    .header-address {
+      font-size: 11px;
+      line-height: 1.4;
+      margin: 4px 0 0 0;
+    }
+    .tax-badge {
+      border: 2px solid #000000;
+      padding: 8px 12px;
+      text-align: right;
+      display: inline-block;
+    }
+    .meta-bar {
+      border-top: 2px solid #000000;
+      border-bottom: 2px solid #000000;
+      padding: 8px 0;
+      margin: 18px 0;
+      font-size: 11px;
+    }
+    .parties-table {
+      width: 100%;
+      margin-bottom: 20px;
+      font-size: 11px;
+    }
+    .parties-col {
+      width: 50%;
+      vertical-align: top;
+      padding: 8px 12px;
+      border: 1px solid #000000;
+    }
+    .items-table {
+      width: 100%;
+      font-size: 11px;
+      border: 1px solid #000000;
+      margin-bottom: 16px;
+    }
+    .items-table th {
+      background: #ffffff;
+      border-bottom: 2px solid #000000;
+      border-right: 1px solid #000000;
+      padding: 8px 10px;
+      text-align: left;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .items-table td {
+      border-bottom: 1px solid #000000;
+      border-right: 1px solid #000000;
+      padding: 10px;
+      vertical-align: top;
+    }
+    .items-table th:last-child, .items-table td:last-child {
+      border-right: none;
+    }
+    .calc-table {
+      width: 100%;
+      font-size: 11px;
+      border-collapse: collapse;
+    }
+    .calc-table td {
+      padding: 4px 0;
+    }
+    .total-row td {
+      border-top: 2px solid #000000;
+      border-bottom: 2px solid #000000;
+      padding: 8px 0;
+      font-weight: 900;
+      font-size: 14px;
+    }
+    .words-box {
+      border: 1px solid #000000;
+      padding: 10px 12px;
+      font-size: 11px;
+      background: #ffffff;
+      margin-bottom: 12px;
+    }
+    .stamp-box {
+      border: 2px solid #000000;
+      width: 130px;
+      height: 60px;
+      text-align: center;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+    }
+    .print-btn {
+      background: #000000;
+      color: #ffffff;
+      padding: 8px 18px;
+      border: none;
+      font-size: 12px;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="no-print" style="max-width: 760px; margin: 0 auto 12px auto; display: flex; justify-content: space-between; align-items: center;">
+    <button onclick="window.print()" class="print-btn">🖨️ Print / Save as PDF</button>
+    <span style="font-size: 11px; color: #475569;">Official Black & White IRD Tax Invoice</span>
+  </div>
+
+  <div class="invoice-box">
+    
+    <!-- Top Header -->
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td valign="top" style="width: 60%;">
+          <h1 class="header-title">EQUIPSHARE</h1>
+          <p class="header-sub">EquipShare Marketplace Nepal Pvt. Ltd.</p>
+          <p class="header-address">
+            Jagati-7, Bhaktapur, Bagmati Province, Nepal<br/>
+            Tel: +977-1-6612345 | Web: www.equipshare.com<br/>
+            Email: billing@equipshare.com
+          </p>
+        </td>
+        <td valign="top" align="right" style="width: 40%;">
+          <div class="tax-badge">
+            <div style="font-size: 14px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase;">
+              TAX INVOICE
+            </div>
+            <div style="font-size: 12px; font-weight: bold; margin-top: 2px;">
+              कर बिजक
+            </div>
+            <div style="font-size: 13px; font-weight: 900; border-top: 1px solid #000; margin-top: 6px; padding-top: 4px;">
+              PAN / VAT: 610394821
+            </div>
+            <div style="font-size: 10px; margin-top: 2px;">
+              Company Reg: 284910/080/081
+            </div>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Metadata Strip -->
+    <div class="meta-bar">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td><strong>Invoice No:</strong> INV-000001</td>
+          <td><strong>Issue Date:</strong> 2026-10-30</td>
+          <td><strong>Payment:</strong> PAID (QR/Fonepay)</td>
+          <td align="right"><strong>Txn Ref:</strong> TXN-003ADE68B1</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Parties Details -->
+    <table class="parties-table" cellpadding="0" cellspacing="0">
+      <tr>
+        <td class="parties-col" style="border-right: none;">
+          <div style="font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 6px;">
+            BILLED TO (HIRE CUSTOMER / RENTER):
+          </div>
+          <div style="font-size: 13px; font-weight: 800;">satina</div>
+          <div style="margin-top: 4px; line-height: 1.5;">
+            <strong>Email:</strong> satina@gmail.com<br/>
+            <strong>Contact:</strong> +977-9999999999<br/>
+            <strong>Project Site:</strong> Bhaktapur<br/>
+            <strong>Buyer PAN:</strong> Consumer / Unregistered
+          </div>
+        </td>
+        <td class="parties-col">
+          <div style="font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 6px;">
+            ON BEHALF OF (EQUIPMENT OWNER):
+          </div>
+          <div style="font-size: 13px; font-weight: 800;">Rajendra Tahamata</div>
+          <div style="margin-top: 4px; line-height: 1.5;">
+            <strong>Email:</strong> rajendra92345@gmail.com<br/>
+            <strong>Contact:</strong> +977-9767235779<br/>
+            <strong>Booking Ref:</strong> #ES-1<br/>
+            <strong>Depot:</strong> Jagati, Bhaktapur
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Items Table -->
+    <table class="items-table" cellpadding="0" cellspacing="0">
+      <thead>
+        <tr>
+          <th style="width: 5%; text-align: center;">S.N.</th>
+          <th style="width: 48%;">Description of Machinery / Service</th>
+          <th style="width: 12%; text-align: center;">Duration</th>
+          <th style="width: 17%; text-align: right;">Daily Rate</th>
+          <th style="width: 18%; text-align: right;">Gross Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="text-align: center;">1</td>
+          <td>
+            <div style="font-size: 13px; font-weight: 900;">EC950F</div>
+            <div style="font-size: 10px; margin-top: 3px;">
+              Rental Period: 2026-10-29 to 2026-11-11 (14 Days)<br/>
+              Operational Deployment: Bhaktapur
+            </div>
+          </td>
+          <td style="text-align: center;">
+            14 Days
+          </td>
+          <td style="text-align: right;">
+            रु 40,000.00
+          </td>
+          <td style="text-align: right; font-weight: 800;">
+            रु 560,000.00
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Calculation Summary & Words -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+      <tr>
+        <td width="55%" valign="top" style="padding-right: 20px;">
+          <div class="words-box">
+            <div style="font-weight: 900; text-transform: uppercase; font-size: 10px; margin-bottom: 3px;">
+              Amount in Words (अक्षरूपी):
+            </div>
+            <div style="font-style: italic; font-weight: 700;">
+              "Five Lakh Sixty Thousand Nepalese Rupees Only"
+            </div>
+          </div>
+          <div style="font-size: 10px; line-height: 1.4; border: 1px dashed #000; padding: 6px 10px;">
+            <strong>Declaration:</strong> Certified that this invoice reflects the actual hire fee charged for the equipment specified. Goods and services tax calculated in accordance with the Nepal Value Added Tax (VAT) Act, 2052.
+          </div>
+        </td>
+        <td width="45%" valign="top">
+          <table class="calc-table">
+            <tr>
+              <td>Taxable Amount (करयोग्य रकम):</td>
+              <td align="right" style="font-weight: 700;">रु 495,575.22</td>
+            </tr>
+            <tr>
+              <td>13% VAT (मू.अ.कर १३%):</td>
+              <td align="right" style="font-weight: 700;">रु 64,424.78</td>
+            </tr>
+            <tr>
+              <td>Non-Taxable Amount / Deposit:</td>
+              <td align="right">रु 0.00</td>
+            </tr>
+            <tr class="total-row">
+              <td>Grand Total (कुल जम्मा):</td>
+              <td align="right">रु 560,000.00</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Bottom Signatures & Seal -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-top: 1px solid #000; padding-top: 14px;">
+      <tr>
+        <td width="60%" valign="bottom">
+          <p style="font-size: 9px; line-height: 1.4; margin: 0;">
+            This is a computer-generated commercial tax invoice recognized under Nepal IRD rules.<br/>
+            EquipShare Marketplace Nepal Pvt. Ltd. · Jagati-7, Bhaktapur
+          </p>
+        </td>
+        <td width="40%" align="right" valign="bottom">
+          <div style="text-align: center; display: inline-block;">
+            <div class="stamp-box">
+              <span>★ EQUIPSHARE ★</span>
+              <span style="border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 1px 0; margin: 2px 0;">PAID & VERIFIED</span>
+              <span>BHAKTAPUR</span>
+            </div>
+            <div style="border-top: 1px solid #000; margin-top: 8px; padding-top: 4px; font-size: 10px; font-weight: 800;">
+              Authorized Billing Signatory
+            </div>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+  </div>
+
+</body>
+</html>

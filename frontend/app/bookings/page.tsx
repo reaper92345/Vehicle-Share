@@ -45,6 +45,7 @@ export default function BookingsPage() {
   const [confirmingPayment, setConfirmingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [receiptInfo, setReceiptInfo] = useState<{ invoiceNo?: string; emailSent?: boolean; previewUrl?: string } | null>(null);
 
   const userRole = (user?.role || user?.user_type || "").toLowerCase();
   const isOwner = ["owner", "both", "admin"].includes(userRole);
@@ -178,6 +179,7 @@ export default function BookingsPage() {
     setQrDataUrl(null);
     setPaymentError(null);
     setPaymentSuccess(false);
+    setReceiptInfo(null);
     setLoadingQr(true);
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -218,16 +220,23 @@ export default function BookingsPage() {
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
         setPaymentSuccess(true);
+        setReceiptInfo({
+          invoiceNo: data.invoiceNo,
+          emailSent: Boolean(data.email?.sent),
+          previewUrl: data.email?.previewUrl,
+        });
+
         if (data.email?.sent) {
-          setActionSuccess("Payment confirmed. A receipt was emailed to the hire customer.");
+          setActionSuccess(`Payment confirmed! An official tax receipt (#${data.invoiceNo}) has been dispatched to your email.`);
         } else {
-          setActionSuccess("Payment confirmed. Receipt email is in log/preview mode (SMTP not configured).");
+          setActionSuccess(`Payment confirmed! Receipt #${data.invoiceNo} generated.`);
         }
         await fetchAllBookings();
         setTimeout(() => {
           setActivePaymentBooking(null);
           setPaymentSuccess(false);
-        }, 1500);
+          setReceiptInfo(null);
+        }, 3000);
       } else {
         const err = await res.json().catch(() => ({}));
         setPaymentError(err.error || "Failed to confirm payment.");
@@ -575,8 +584,23 @@ export default function BookingsPage() {
             </div>
 
             {paymentSuccess && (
-              <div className="mb-4 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-center text-xs font-semibold text-emerald-700">
-                ✓ Payment confirmed successfully!
+              <div className="mb-4 rounded-xl bg-emerald-50 border border-emerald-200 p-3.5 text-center text-xs text-emerald-800 space-y-1">
+                <p className="font-bold text-sm text-emerald-700">✓ Payment Confirmed Successfully!</p>
+                <p>
+                  Official receipt <strong>#{receiptInfo?.invoiceNo || "INV"}</strong> has been generated and dispatched to your email.
+                </p>
+                {receiptInfo?.previewUrl && (
+                  <p className="pt-1">
+                    <a
+                      href={receiptInfo.previewUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-brand-700 underline hover:text-brand-900"
+                    >
+                      🔗 Open Email Preview (Ethereal Mailbox)
+                    </a>
+                  </p>
+                )}
               </div>
             )}
 

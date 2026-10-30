@@ -1,148 +1,192 @@
 "use client";
-import React, { useEffect, useState } from 'react';
-import "./admin.css";
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { jwtDecode as jwt_decode } from 'jwt-decode';
 
+import React, { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import { jwtDecode } from "jwt-decode";
+import { MagneticButton } from "../../components/smoothui";
 
-
-
-// Admin layout – renders a premium sidebar for admin‑only pages.
-
-const AdminSidebar = () => (
-  <aside className="admin-sidebar w-64 bg-gradient-to-b from-gray-800 to-gray-900 text-white p-4 fixed h-full hidden md:block">
-    <h2 className="sidebar-title text-2xl font-bold mb-4">Admin Panel</h2>
-    <nav className="sidebar-nav flex flex-col space-y-2">
-      <Link href="/admin/dashboard" className="sidebar-link hover:bg-gray-700 p-2 rounded">Dashboard</Link>
-      <Link href="/admin/users" className="sidebar-link hover:bg-gray-700 p-2 rounded">Users</Link>
-      <Link href="/admin/equipment" className="sidebar-link hover:bg-gray-700 p-2 rounded">Equipment</Link>
-      <Link href="/admin/bookings" className="sidebar-link hover:bg-gray-700 p-2 rounded">Rentals & payments</Link>
-      <Link href="/admin/analytics" className="sidebar-link hover:bg-gray-700 p-2 rounded">Analytics</Link>
-      <Link href="/" className="sidebar-link hover:bg-gray-700 p-2 rounded">Back to site</Link>
-    </nav>
-  </aside>
-);
-
-const OwnerSidebar = () => (
-  <aside className="owner-sidebar w-64 bg-gradient-to-b from-blue-800 to-blue-900 text-white p-4 fixed h-full hidden md:block">
-    <h2 className="sidebar-title text-2xl font-bold mb-4">Owner Panel</h2>
-    <nav className="sidebar-nav flex flex-col space-y-2">
-      <Link href="/owner/dashboard" className="sidebar-link hover:bg-blue-700 p-2 rounded">Dashboard</Link>
-      <Link href="/owner/equipment" className="sidebar-link hover:bg-blue-700 p-2 rounded">My Equipment</Link>
-      <Link href="/owner/bookings" className="sidebar-link hover:bg-blue-700 p=2 rounded">Bookings</Link>
-    </nav>
-  </aside>
-);
-
-const RenterSidebar = () => (
-  <aside className="renter-sidebar w-64 bg-gradient-to-b from-green-800 to-green-900 text-white p-4 fixed h-full hidden md:block">
-    <h2 className="sidebar-title text-2xl font-bold mb-4">Renter Panel</h2>
-    <nav className="sidebar-nav flex flex-col space-y-2">
-      <Link href="/renter/dashboard" className="sidebar-link hover:bg-green-700 p-2 rounded">Dashboard</Link>
-      <Link href="/renter/equipment" className="sidebar-link hover:bg-green-700 p-2 rounded">Explore Equipment</Link>
-      <Link href="/renter/bookings" className="sidebar-link hover:bg-green-700 p=2 rounded">My Bookings</Link>
-    </nav>
-  </aside>
-);
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [role, setRole] = useState<string>('');
-  const [darkMode, setDarkMode] = useState(false);
+  const pathname = usePathname();
+  const [authorized, setAuthorized] = useState(false);
+  const [adminUser, setAdminUser] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Verify user and initialise theme/role
   useEffect(() => {
-    const stored = localStorage.getItem('equipshare_user');
-    if (stored) {
-      try {
-        const user = JSON.parse(stored);
-        // Prefer explicit role, fall back to user_type, then JWT payload
-        const explicitRole = user.role ?? user.user_type;
-        let resolvedRole = typeof explicitRole === 'string' ? explicitRole.toLowerCase() : '';
-        if (!resolvedRole) {
-          // Decode token to get role (payload.userType)
-          const token = localStorage.getItem('equipshare_token');
-          if (token) {
-            try {
-              const decoded: any = jwt_decode(token);
-              resolvedRole = (decoded.userType || decoded.role || '').toString().toLowerCase();
-            } catch (e) {
-              console.error('Failed to decode JWT for role', e);
-            }
-          }
-        }
-        setRole(resolvedRole);
-        if (!['admin', 'owner', 'renter'].includes(resolvedRole)) {
-          router.replace('/');
-        }
-      } catch (e) {
-        router.replace('/');
+    const storedUser = localStorage.getItem("equipshare_user");
+    const storedToken = localStorage.getItem("equipshare_token");
+
+    if (!storedToken || !storedUser) {
+      router.replace("/login?redirect=/admin");
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(storedUser);
+      let userRole = (parsed.role || parsed.user_type || "").toLowerCase();
+
+      if (!userRole && storedToken) {
+        const decoded: any = jwtDecode(storedToken);
+        userRole = (decoded.role || decoded.userType || "").toLowerCase();
       }
-    } else {
-      router.replace('/login');
+
+      // Check admin authorization
+      if (userRole === "admin") {
+        setAdminUser(parsed);
+        setAuthorized(true);
+      } else {
+        // If not admin, gracefully route to owner or hire dashboard
+        if (["owner", "both"].includes(userRole)) {
+          router.replace("/owner/dashboard");
+        } else {
+          router.replace("/hire/dashboard");
+        }
+      }
+    } catch (e) {
+      router.replace("/login");
     }
-    const savedTheme = localStorage.getItem('equipshare_theme');
-    if (savedTheme === 'dark') {
-      setDarkMode(true);
-      document.documentElement.classList.add('dark');
-    }
-  }, []);
+  }, [router]);
 
-  const toggleTheme = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    if (newMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('equipshare_theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.removeItem('equipshare_theme');
-    }
-  };
+  if (!authorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent" />
+          <p className="text-xs font-semibold text-slate-400 tracking-wider uppercase">
+            Verifying Admin Security Clearance...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
-
-  // Render nothing while role is being determined
-  if (!role) return null;
-
-  // Mobile header with hamburger
-  const MobileHeader = (
-    <header className="md:hidden flex items-center justify-between bg-gray-800 text-white p-4">
-      <button onClick={toggleSidebar} className="text-2xl">☰</button>
-      <span className="text-lg font-bold">{role.charAt(0).toUpperCase() + role.slice(1)} Panel</span>
-      <button onClick={toggleTheme} className="px-2 py-1 bg-gray-600 rounded">
-        {darkMode ? '☀' : '🌙'}
-      </button>
-    </header>
-  );
-
-  const Sidebar = (
-    <>
-      {role === 'admin' && <AdminSidebar />}
-      {role === 'owner' && <OwnerSidebar />}
-      {role === 'renter' && <RenterSidebar />}
-    </>
-  );
+  const navLinks = [
+    { label: "Command Center", href: "/admin", icon: "⚡" },
+    { label: "Analytics & VAT", href: "/admin/analytics", icon: "📊" },
+    { label: "User Directory", href: "/admin/users", icon: "👥" },
+    { label: "Machinery Fleet", href: "/admin/equipment", icon: "🚜" },
+    { label: "Rentals & Tax Invoices", href: "/admin/bookings", icon: "📑" },
+  ];
 
   return (
-    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
-      {MobileHeader}
-      {/* Desktop sidebar */}
-      <div className="hidden md:block">
-        {Sidebar}
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col md:flex-row">
+      {/* Sidebar Desktop */}
+      <aside className="hidden md:flex w-64 flex-col justify-between bg-slate-900 text-white p-5 border-r border-slate-800 shadow-xl shrink-0 min-h-screen sticky top-0 h-screen">
+        <div>
+          {/* Logo & Platform Info */}
+          <Link href="/admin" className="flex items-center gap-3 group pb-6 border-b border-slate-800">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white font-black text-lg shadow-md group-hover:scale-105 transition-transform">
+              E
+            </div>
+            <div>
+              <p className="font-black text-sm text-white tracking-wide">EquipShare Admin</p>
+              <p className="text-[10px] text-emerald-400 font-semibold tracking-wider">PAN: 610394821</p>
+            </div>
+          </Link>
+
+          {/* Navigation Items */}
+          <nav className="mt-6 space-y-1.5">
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    isActive
+                      ? "bg-emerald-600/90 text-white shadow-md shadow-emerald-900/30"
+                      : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                  }`}
+                >
+                  <span className="text-base">{link.icon}</span>
+                  <span>{link.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Bottom Profile & Return to Site */}
+        <div className="pt-4 border-t border-slate-800 space-y-3">
+          <div className="flex items-center gap-3 px-2">
+            <div className="h-8 w-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-emerald-400">
+              {adminUser?.full_name?.[0] || adminUser?.name?.[0] || "A"}
+            </div>
+            <div className="truncate">
+              <p className="text-xs font-bold text-white truncate">
+                {adminUser?.full_name || adminUser?.name || "System Admin"}
+              </p>
+              <span className="text-[10px] text-slate-400 font-mono">Superuser Access</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Link href="/" className="w-full">
+              <button className="w-full text-center py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] font-bold text-slate-300 transition">
+                🌐 Public Website
+              </button>
+            </Link>
+          </div>
+        </div>
+      </aside>
+
+      {/* Mobile Top Navbar */}
+      <div className="md:hidden flex items-center justify-between bg-slate-900 text-white px-5 py-3.5 border-b border-slate-800 sticky top-0 z-40">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 font-black text-white text-sm">
+            E
+          </div>
+          <div>
+            <p className="font-bold text-xs">EquipShare Admin</p>
+            <p className="text-[9px] text-emerald-400">PAN: 610394821</p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2 rounded-lg bg-slate-800 text-slate-200 text-sm"
+          aria-label="Toggle navigation menu"
+        >
+          {sidebarOpen ? "✕" : "☰"}
+        </button>
       </div>
-      {/* Mobile overlay drawer */}
-      <div
-        className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-        onClick={toggleSidebar}
-      />
-      <div
-        className={`fixed inset-y-0 left-0 w-64 bg-gray-800 text-white z-50 transform transition-transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:hidden`}
-      >
-        {Sidebar}
-      </div>
-      <main className="flex-1 p-4 overflow-auto">{children}</main>
+
+      {/* Mobile Drawer Menu */}
+      {sidebarOpen && (
+        <div className="md:hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex">
+          <div className="w-64 bg-slate-900 h-full p-5 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                <span className="font-bold text-white text-sm">Admin Navigation</span>
+                <button onClick={() => setSidebarOpen(false)} className="text-slate-400">✕</button>
+              </div>
+              <nav className="mt-4 space-y-2">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800"
+                  >
+                    <span>{link.icon}</span>
+                    <span>{link.label}</span>
+                  </Link>
+                ))}
+              </nav>
+            </div>
+            <Link href="/" className="btn-secondary text-xs text-center py-2 rounded-xl">
+              Back to Site
+            </Link>
+          </div>
+          <div className="flex-1" onClick={() => setSidebarOpen(false)} />
+        </div>
+      )}
+
+      {/* Main Content Area */}
+      <main className="flex-1 p-6 sm:p-8 max-w-7xl mx-auto w-full overflow-x-hidden">
+        {children}
+      </main>
     </div>
   );
 }
