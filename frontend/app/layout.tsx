@@ -9,7 +9,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" style={{
+      fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+    }}>
       <body>
         <NotificationProvider>
           {children}

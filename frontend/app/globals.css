@@ -1,23 +1,176 @@
 @import 'tailwindcss';
 @config '../tailwind.config.js';
 
+/* ─── Google Fonts ─────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap');
+
+/* Cabinet Grotesk — hosted via Fontshare CDN */
+@import url('https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,600,700,800&display=swap');
+
+/* ─── Design System Tokens ─────────────────────────────────────────────────── */
 :root {
   color-scheme: light;
+
+  /* Typography */
+  --font-jakarta: 'Plus Jakarta Sans';
+  --font-cabinet: 'Cabinet Grotesk';
+
+  /* Off-black text — never pure #000 */
+  --color-text-primary: #171717;
+  --color-text-secondary: #525252;
+  --color-text-muted: #737373;
+  --color-text-faint: #A3A3A3;
+
+  /* Off-white surfaces — never pure #fff for page bg */
+  --color-bg-page: #F8FAFC;
+  --color-bg-card: #FFFFFF;
+  --color-bg-sunken: #F1F5F9;
+
+  /* Semi-transparent border — never harsh #E5E7EB */
+  --color-border: rgba(0, 0, 0, 0.06);
+  --color-border-dark: rgba(255, 255, 255, 0.10);
+
+  /* Brand accent — limit to CTA only */
+  --color-brand: #2e6f3d;
+
+  /* Layered shadow system */
+  --shadow-surface: 0 1px 2px 0 rgba(0, 0, 0, 0.04), 0 4px 12px -2px rgba(0, 0, 0, 0.05);
+  --shadow-elevated: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 16px 32px -4px rgba(0, 0, 0, 0.09);
+  --shadow-modal: 0 8px 16px -4px rgba(0, 0, 0, 0.06), 0 32px 64px -8px rgba(0, 0, 0, 0.12);
+}
+
+/* ─── Base ─────────────────────────────────────────────────────────────────── */
+html {
+  font-family: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  @apply bg-slate-50 text-slate-800 antialiased;
+  background-color: var(--color-bg-page);
+  color: var(--color-text-primary);
+  line-height: 1.55;
+  @apply antialiased;
 }
 
+/* ─── Heading hierarchy ─────────────────────────────────────────────────────── */
+h1,
+h2 {
+  font-family: var(--font-cabinet), 'Cabinet Grotesk', var(--font-jakarta), system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--color-text-primary);
+}
+
+h3 {
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--color-text-primary);
+}
+
+/* ─── Selection ─────────────────────────────────────────────────────────────── */
+::selection {
+  background-color: rgba(46, 111, 61, 0.15);
+  color: #143326;
+}
+
+/* ─── Custom Scrollbar ──────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(46, 111, 61, 0.25);
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(46, 111, 61, 0.45);
+}
+
+/* ─── Global Utility Classes ────────────────────────────────────────────────── */
+
+/* Card — outer container */
 .card {
-  @apply rounded-2xl border border-slate-200 bg-white shadow-soft;
+  @apply rounded-2xl bg-white;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-surface);
 }
 
+/* Card inner section — nested radius */
+.card-inner {
+  @apply rounded-xl;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Primary CTA button */
 .btn-primary {
-  @apply inline-flex items-center justify-center rounded-xl bg-brand-700 px-4 py-2.5 font-medium text-white transition hover:bg-brand-900 cursor-pointer;
+  @apply inline-flex items-center justify-center rounded-[10px] bg-brand-700 px-4 py-2.5 font-semibold text-white transition-all duration-150 cursor-pointer;
+  @apply hover:-translate-y-px hover:bg-brand-800 hover:shadow-surface;
+  @apply active:scale-[0.98] active:translate-y-0;
+  @apply focus:outline-none focus:ring-2 focus:ring-brand-500/30;
+  @apply disabled:opacity-50 disabled:pointer-events-none;
 }
 
+/* Secondary / ghost button */
+.btn-secondary {
+  @apply inline-flex items-center justify-center rounded-[10px] px-4 py-2.5 font-semibold transition-all duration-150 cursor-pointer;
+  @apply text-ink bg-transparent;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  @apply hover:-translate-y-px hover:shadow-surface;
+  @apply active:scale-[0.98] active:translate-y-0;
+  @apply focus:outline-none focus:ring-2 focus:ring-brand-500/20;
+  @apply disabled:opacity-50 disabled:pointer-events-none;
+}
+
+/* Input field */
 .input {
-  @apply w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none ring-0 transition focus:border-brand-500;
+  @apply w-full rounded-[10px] px-3 py-2.5 text-sm outline-none transition-all duration-150;
+  @apply bg-white text-ink;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  @apply focus:border-brand-500/60 focus:ring-2 focus:ring-brand-500/15;
+  @apply placeholder:text-ink-faint;
 }
 
+/* Status badges — muted / pastel */
+.badge-success {
+  background-color: #ECFDF5;
+  color: #065F46;
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+}
+
+.badge-error {
+  background-color: #FEF2F2;
+  color: #991B1B;
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+}
+
+.badge-warning {
+  background-color: #FFFBEB;
+  color: #92400E;
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+}
+
+.badge-info {
+  background-color: #EFF6FF;
+  color: #1E40AF;
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+}
+
+.badge-neutral {
+  background-color: #F5F5F5;
+  color: #404040;
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+}
+
+/* Small uppercase label */
+.label-caps {
+  @apply text-[11px] font-semibold uppercase tracking-label;
+  color: var(--color-text-muted);
+}

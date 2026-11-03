@@ -44,7 +44,14 @@ export function MagneticButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "relative inline-flex items-center justify-center font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 disabled:pointer-events-none active:scale-95",
+        // Base
+        "relative inline-flex items-center justify-center font-semibold transition-all duration-150",
+        // Focus ring — brand tint, not harsh outline
+        "focus:outline-none focus:ring-2 focus:ring-brand-500/30",
+        // Disabled
+        "disabled:opacity-50 disabled:pointer-events-none",
+        // Press feedback — subtle, not `scale-95`
+        "active:scale-[0.98]",
         className
       )}
       {...(props as any)}
@@ -53,4 +60,3 @@ export function MagneticButton({
     </motion.button>
   );
 }
-

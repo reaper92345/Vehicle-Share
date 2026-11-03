@@ -13,15 +13,15 @@ interface TiltCardProps extends React.HTMLAttributes<HTMLDivElement> {
 export function TiltCard({
   children,
   className,
-  maxTilt = 6,
+  maxTilt = 5,
   ...props
 }: TiltCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  const mouseXSpring = useSpring(x, { stiffness: 200, damping: 20 });
-  const mouseYSpring = useSpring(y, { stiffness: 200, damping: 20 });
+  const mouseXSpring = useSpring(x, { stiffness: 180, damping: 22 });
+  const mouseYSpring = useSpring(y, { stiffness: 180, damping: 22 });
 
   const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], [`${maxTilt}deg`, `-${maxTilt}deg`]);
   const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], [`-${maxTilt}deg`, `${maxTilt}deg`]);
@@ -29,10 +29,8 @@ export function TiltCard({
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!ref.current) return;
     const rect = ref.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    const xPct = mouseX / rect.width - 0.5;
-    const yPct = mouseY / rect.height - 0.5;
+    const xPct = (e.clientX - rect.left) / rect.width - 0.5;
+    const yPct = (e.clientY - rect.top) / rect.height - 0.5;
     x.set(xPct);
     y.set(yPct);
   };
@@ -52,12 +50,20 @@ export function TiltCard({
         rotateY,
         transformStyle: "preserve-3d",
       }}
-      transition={{ type: "spring", stiffness: 200, damping: 20 }}
-      className={cn("transition-shadow duration-300", className)}
+      whileHover={{
+        // Subtle lift — no bg jump
+        y: -2,
+        transition: { duration: 0.18, ease: "easeOut" },
+      }}
+      className={cn(
+        "transition-shadow duration-300",
+        // Outer card radius — 16px (rounded-2xl)
+        // Inner items should use rounded-xl (12px) for nested radius math
+        className
+      )}
       {...(props as any)}
     >
       {children}
     </motion.div>
   );
 }
-

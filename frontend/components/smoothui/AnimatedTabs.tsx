@@ -18,7 +18,13 @@ export function AnimatedTabs<T extends string>({
   className,
 }: AnimatedTabsProps<T>) {
   return (
-    <div className={cn("flex space-x-1 p-1 bg-slate-100/80 rounded-2xl border border-slate-200/60 shadow-inner", className)}>
+    <div
+      className={cn("flex space-x-0.5 p-1 rounded-2xl shadow-inner", className)}
+      style={{
+        background: "rgba(0,0,0,0.03)",
+        border: "1px solid rgba(0,0,0,0.05)",
+      }}
+    >
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         return (
@@ -26,22 +32,48 @@ export function AnimatedTabs<T extends string>({
             key={tab.id}
             onClick={() => onChange(tab.id)}
             className={cn(
-              "relative px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-colors duration-200 flex items-center gap-2 z-10",
-              isActive ? "text-slate-900" : "text-slate-600 hover:text-slate-900"
+              // Layout
+              "relative px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl flex items-center gap-2 z-10",
+              // Transition — no instant color jumps
+              "transition-colors duration-150",
+              // States
+              isActive
+                ? "text-ink"
+                : "text-ink-subtle hover:text-ink-muted"
             )}
+            style={{
+              letterSpacing: "0.01em",
+              color: isActive ? "#171717" : "#737373",
+            }}
           >
             {tab.icon && <span>{tab.icon}</span>}
             <span>{tab.label}</span>
+
+            {/* Badge — muted amber */}
             {tab.badge !== undefined && Number(tab.badge) > 0 && (
-              <span className="rounded-full bg-amber-500 text-white text-[11px] font-bold px-2 py-0.5 shadow-sm animate-pulse">
+              <span
+                className="rounded-full text-[10px] font-bold px-1.5 py-0.5"
+                style={{
+                  background: "#FFFBEB",
+                  color: "#92400E",
+                  border: "1px solid rgba(146,64,14,0.15)",
+                }}
+              >
                 {tab.badge}
               </span>
             )}
+
+            {/* Active pill — slides smoothly under */}
             {isActive && (
               <motion.div
                 layoutId="activeTabPill"
-                className="absolute inset-0 bg-white rounded-xl shadow-sm border border-slate-200/80 -z-10"
-                transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                className="absolute inset-0 rounded-xl -z-10"
+                style={{
+                  background: "#FFFFFF",
+                  boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05), 0 2px 6px -1px rgba(0,0,0,0.06)",
+                  border: "1px solid rgba(0,0,0,0.06)",
+                }}
+                transition={{ type: "spring", stiffness: 380, damping: 32 }}
               />
             )}
           </button>
@@ -50,4 +82,3 @@ export function AnimatedTabs<T extends string>({
     </div>
   );
 }
-

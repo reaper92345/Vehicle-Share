@@ -145,6 +145,58 @@ function NotificationContainer({
   );
 }
 
+// ─── Muted / pastel config — never harsh saturated colors ───────────────────
+function getToastConfig(type: NotificationType) {
+  switch (type) {
+    case "success":
+      return {
+        icon: "✓",
+        bg: "#FFFFFF",
+        border: "rgba(6,95,70,0.15)",
+        iconBg: "#ECFDF5",
+        iconColor: "#065F46",
+        barBg: "#16A34A",
+      };
+    case "error":
+      return {
+        icon: "✕",
+        bg: "#FFFFFF",
+        border: "rgba(153,27,27,0.15)",
+        iconBg: "#FEF2F2",
+        iconColor: "#991B1B",
+        barBg: "#DC2626",
+      };
+    case "warning":
+      return {
+        icon: "!",
+        bg: "#FFFFFF",
+        border: "rgba(146,64,14,0.15)",
+        iconBg: "#FFFBEB",
+        iconColor: "#92400E",
+        barBg: "#D97706",
+      };
+    case "tax_invoice":
+      return {
+        icon: "🧾",
+        bg: "#0F172A",
+        border: "rgba(255,255,255,0.08)",
+        iconBg: "rgba(255,255,255,0.07)",
+        iconColor: "#86EFAC",
+        barBg: "#4ADE80",
+      };
+    case "info":
+    default:
+      return {
+        icon: "ℹ",
+        bg: "#FFFFFF",
+        border: "rgba(46,111,61,0.15)",
+        iconBg: "#f0f7f1",
+        iconColor: "#2e6f3d",
+        barBg: "#2e6f3d",
+      };
+  }
+}
+
 function NotificationToast({
   item,
   onDismiss,
@@ -152,98 +204,49 @@ function NotificationToast({
   item: NotificationItem;
   onDismiss: () => void;
 }) {
-  const getBadgeConfig = () => {
-    switch (item.type) {
-      case "success":
-        return {
-          icon: "✓",
-          border: "border-emerald-200",
-          bg: "bg-white",
-          iconBg: "bg-emerald-100 text-emerald-800",
-          barBg: "bg-emerald-500",
-        };
-      case "error":
-        return {
-          icon: "✕",
-          border: "border-rose-200",
-          bg: "bg-white",
-          iconBg: "bg-rose-100 text-rose-800",
-          barBg: "bg-rose-500",
-        };
-      case "warning":
-        return {
-          icon: "!",
-          border: "border-amber-200",
-          bg: "bg-white",
-          iconBg: "bg-amber-100 text-amber-800",
-          barBg: "bg-amber-500",
-        };
-      case "tax_invoice":
-        return {
-          icon: "🧾",
-          border: "border-slate-800",
-          bg: "bg-slate-900 text-white",
-          iconBg: "bg-slate-800 text-emerald-400 border border-slate-700",
-          barBg: "bg-emerald-400",
-        };
-      case "info":
-      default:
-        return {
-          icon: "ℹ",
-          border: "border-brand-200",
-          bg: "bg-white",
-          iconBg: "bg-brand-100 text-brand-800",
-          barBg: "bg-brand-600",
-        };
-    }
-  };
-
-  const config = getBadgeConfig();
+  const config = getToastConfig(item.type);
   const isDark = item.type === "tax_invoice";
 
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      initial={{ opacity: 0, y: 16, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9, x: 20 }}
-      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      exit={{ opacity: 0, scale: 0.92, x: 24 }}
+      transition={{ type: "spring", stiffness: 420, damping: 32 }}
       drag="x"
       dragConstraints={{ left: 0, right: 120 }}
       onDragEnd={(_, info) => {
         if (info.offset.x > 80) onDismiss();
       }}
-      className={cn(
-        "pointer-events-auto relative overflow-hidden rounded-2xl border p-4 shadow-xl backdrop-blur-md transition-shadow select-none",
-        config.border,
-        config.bg
-      )}
+      className="pointer-events-auto relative overflow-hidden rounded-2xl p-4 select-none"
+      style={{
+        background: config.bg,
+        border: `1px solid ${config.border}`,
+        boxShadow: "0 4px 6px -1px rgba(0,0,0,0.06), 0 16px 32px -4px rgba(0,0,0,0.10)",
+      }}
     >
       <div className="flex items-start gap-3">
+        {/* Icon badge */}
         <div
-          className={cn(
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-black",
-            config.iconBg
-          )}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-black"
+          style={{ background: config.iconBg, color: config.iconColor }}
         >
           {config.icon}
         </div>
 
+        {/* Content */}
         <div className="flex-1 min-w-0 pr-4">
           <p
-            className={cn(
-              "text-xs font-bold leading-snug",
-              isDark ? "text-white" : "text-slate-900"
-            )}
+            className="text-xs font-bold leading-snug"
+            style={{ color: isDark ? "#F1F5F9" : "#171717" }}
           >
             {item.title}
           </p>
           {item.message && (
             <p
-              className={cn(
-                "mt-0.5 text-[11px] leading-relaxed",
-                isDark ? "text-slate-300" : "text-slate-600"
-              )}
+              className="mt-0.5 text-[11px] leading-relaxed"
+              style={{ color: isDark ? "#94A3B8" : "#737373" }}
             >
               {item.message}
             </p>
@@ -256,20 +259,16 @@ function NotificationToast({
                   href={item.action.href}
                   target="_blank"
                   rel="noreferrer"
-                  className={cn(
-                    "text-[10px] font-bold uppercase tracking-wider underline hover:opacity-80",
-                    isDark ? "text-emerald-300" : "text-brand-700"
-                  )}
+                  className="text-[10px] font-bold uppercase tracking-label underline transition-opacity hover:opacity-70"
+                  style={{ color: isDark ? "#86EFAC" : "#2e6f3d", letterSpacing: "0.05em" }}
                 >
                   {item.action.label} →
                 </a>
               ) : (
                 <button
                   onClick={item.action.onClick}
-                  className={cn(
-                    "text-[10px] font-bold uppercase tracking-wider underline hover:opacity-80",
-                    isDark ? "text-emerald-300" : "text-brand-700"
-                  )}
+                  className="text-[10px] font-bold uppercase underline transition-opacity hover:opacity-70"
+                  style={{ color: isDark ? "#86EFAC" : "#2e6f3d", letterSpacing: "0.05em" }}
                 >
                   {item.action.label}
                 </button>
@@ -278,28 +277,27 @@ function NotificationToast({
           )}
         </div>
 
+        {/* Dismiss button */}
         <button
           onClick={onDismiss}
-          className={cn(
-            "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] transition hover:bg-slate-200/50",
-            isDark ? "text-slate-400 hover:text-white" : "text-slate-400 hover:text-slate-700"
-          )}
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] transition-all duration-150 hover:bg-black/8 active:scale-[0.9]"
+          style={{ color: isDark ? "#64748B" : "#A3A3A3" }}
           aria-label="Close notification"
         >
           ✕
         </button>
       </div>
 
-      {/* Auto dismiss progress line */}
+      {/* Auto-dismiss progress line */}
       {item.durationMs && item.durationMs > 0 && (
         <motion.div
           initial={{ width: "100%" }}
           animate={{ width: "0%" }}
           transition={{ duration: item.durationMs / 1000, ease: "linear" }}
-          className={cn("absolute bottom-0 left-0 h-[2px]", config.barBg)}
+          className="absolute bottom-0 left-0 h-[2px] rounded-full"
+          style={{ background: config.barBg }}
         />
       )}
     </motion.div>
   );
 }
-
