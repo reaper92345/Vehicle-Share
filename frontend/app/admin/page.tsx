@@ -2,6 +2,18 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { 
+  RotateCw, 
+  Coins, 
+  Truck, 
+  Zap, 
+  Users, 
+  BarChart3, 
+  FileText, 
+  Navigation, 
+  MapPin, 
+  Receipt 
+} from "lucide-react";
 import {
   AnimatedTabs,
   StatWidget,
@@ -256,7 +268,8 @@ export default function ModernAdminCommandCenter() {
             onClick={fetchAllAdminData}
             className="btn-secondary text-xs py-2 px-3.5 rounded-xl border border-slate-200 flex items-center gap-1.5 shadow-xs"
           >
-            🔄 Sync Live Data
+            <RotateCw className="w-3.5 h-3.5" />
+            <span>Sync Live Data</span>
           </MagneticButton>
         </div>
       </div>
@@ -267,28 +280,28 @@ export default function ModernAdminCommandCenter() {
           label="Gross Platform Turnover"
           value={`रु ${stats.totalRevenue.toLocaleString()}`}
           trend={`13% VAT: रु ${vatBreakdown.vat.toLocaleString()}`}
-          icon="💰"
+          icon={<Coins className="w-4 h-4" />}
           accentColor="emerald"
         />
         <StatWidget
           label="Registered Machinery"
           value={stats.totalEquipment}
           trend="Construction & Agri Fleet"
-          icon="🚜"
+          icon={<Truck className="w-4 h-4" />}
           accentColor="brand"
         />
         <StatWidget
           label="Active Field Deployments"
           value={stats.activeBookings}
           trend="Machines on Project Sites"
-          icon="⚡"
+          icon={<Zap className="w-4 h-4" />}
           accentColor="amber"
         />
         <StatWidget
           label="Verified Users & Contractors"
           value={stats.totalUsers}
           trend="Listers, Renters & Admins"
-          icon="👥"
+          icon={<Users className="w-4 h-4" />}
           accentColor="blue"
         />
       </div>
@@ -299,11 +312,11 @@ export default function ModernAdminCommandCenter() {
           activeTab={tab}
           onChange={(t) => setTab(t)}
           tabs={[
-            { id: "overview" as const, label: "Overview & Analytics", icon: "📊" },
-            { id: "users" as const, label: "Contractors & Users", badge: users.length, icon: "👥" },
-            { id: "equipment" as const, label: "Machinery Fleet", badge: equipmentList.length, icon: "🚜" },
-            { id: "bookings" as const, label: "Tax Invoices & Rentals", badge: bookings.length, icon: "📑" },
-            { id: "tracking" as const, label: "National GPS Telematics", icon: "🗺️" },
+            { id: "overview" as const, label: "Overview & Analytics", icon: <BarChart3 className="w-4 h-4" /> },
+            { id: "users" as const, label: "Contractors & Users", badge: users.length, icon: <Users className="w-4 h-4" /> },
+            { id: "equipment" as const, label: "Machinery Fleet", badge: equipmentList.length, icon: <Truck className="w-4 h-4" /> },
+            { id: "bookings" as const, label: "Tax Invoices & Rentals", badge: bookings.length, icon: <FileText className="w-4 h-4" /> },
+            { id: "tracking" as const, label: "National GPS Telematics", icon: <Navigation className="w-4 h-4" /> },
           ]}
         />
       </div>
@@ -521,7 +534,12 @@ export default function ModernAdminCommandCenter() {
                       </div>
                     </td>
                     <td className="p-3 text-slate-600 font-medium">{eq.category}</td>
-                    <td className="p-3 text-slate-600">📍 {eq.location}</td>
+                    <td className="p-3 text-slate-600">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span>{eq.location}</span>
+                      </div>
+                    </td>
                     <td className="p-3 font-bold text-brand-700">
                       रु {Number(eq.price_per_day).toLocaleString()}/day
                     </td>
@@ -571,7 +589,8 @@ export default function ModernAdminCommandCenter() {
               </p>
             </div>
             <div className="rounded-xl bg-slate-900 text-white px-3.5 py-1.5 text-xs font-semibold flex items-center gap-2">
-              <span>🧾 Total Invoices: {bookings.length}</span>
+              <Receipt className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Total Invoices: {bookings.length}</span>
             </div>
           </div>
 
@@ -619,9 +638,9 @@ export default function ModernAdminCommandCenter() {
                       <td className="p-3">
                         <MagneticButton
                           onClick={() => viewReceipt(b.id)}
-                          className="btn-primary text-[10px] py-1.5 px-3 rounded-lg flex items-center gap-1"
+                          className="btn-primary text-[10px] py-1.5 px-3 rounded-lg flex items-center gap-1.5"
                         >
-                          <span>🧾</span>
+                          <Receipt className="w-3 h-3" />
                           <span>VAT Invoice</span>
                         </MagneticButton>
                       </td>

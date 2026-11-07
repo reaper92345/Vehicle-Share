@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { RotateCw, MapPin, Receipt, ArrowRight, FileText } from "lucide-react";
 import {
   MagneticButton,
   SmoothModal,
@@ -124,7 +125,8 @@ export default function DetailedAdminBookingsPage() {
             onClick={fetchBookings}
             className="btn-secondary text-xs py-2 px-3.5 rounded-xl border border-slate-200 flex items-center gap-1.5 shadow-xs"
           >
-            🔄 Refresh
+            <RotateCw className="w-3.5 h-3.5" />
+            <span>Refresh</span>
           </MagneticButton>
         </div>
       </div>
@@ -209,8 +211,9 @@ export default function DetailedAdminBookingsPage() {
                     <td className="p-3.5 font-bold text-slate-900">
                       {b.equipment_title || `Equipment #${b.equipment_id}`}
                       {b.deployment_location && (
-                        <span className="block text-[10px] text-slate-400 font-normal">
-                          📍 {b.deployment_location}
+                        <span className="flex items-center gap-1 text-[10px] text-slate-400 font-normal mt-0.5">
+                          <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                          <span>{b.deployment_location}</span>
                         </span>
                       )}
                     </td>
@@ -245,9 +248,9 @@ export default function DetailedAdminBookingsPage() {
                     <td className="p-3.5 text-right">
                       <MagneticButton
                         onClick={() => viewReceipt(b.id)}
-                        className="btn-primary text-[10px] py-1.5 px-3 rounded-lg font-bold inline-flex items-center gap-1 shadow-xs"
+                        className="btn-primary text-[10px] py-1.5 px-3 rounded-lg font-bold inline-flex items-center gap-1.5 shadow-xs"
                       >
-                        <span>🧾</span>
+                        <Receipt className="w-3.5 h-3.5" />
                         <span>View VAT Invoice</span>
                       </MagneticButton>
                     </td>

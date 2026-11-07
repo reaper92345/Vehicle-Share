@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { motion } from "motion/react";
+import { Truck, MapPin, Navigation, Compass } from "lucide-react";
 import { cn } from "../lib/utils";
 
 export interface LocationPoint {
@@ -160,7 +161,7 @@ export function EquipmentTrackingMap({
 
         {/* Dispatch Status Pill */}
         <div className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs text-white">
-          <span className="text-amber-400">🚜</span>
+          <Truck className="w-4 h-4 text-emerald-400" />
           <div>
             <span className="block text-[10px] text-slate-400 uppercase font-medium">Mobilization Carrier</span>
             <span className="font-bold text-emerald-400">{charges.vehicleType}</span>
@@ -228,7 +229,7 @@ export function EquipmentTrackingMap({
           >
             {NEPAL_DEPOT_AND_SITES.map((site) => (
               <option key={site.name} value={site.name}>
-                {site.isDepot ? "📍 [Depot] " : "🏗️ "}
+                {site.isDepot ? "[Depot] " : "[Site] "}
                 {site.name} ({site.district})
               </option>
             ))}

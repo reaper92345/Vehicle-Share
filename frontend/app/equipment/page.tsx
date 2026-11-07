@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
+import { Truck, BarChart3 } from "lucide-react";
 import RenterDashboard from "./components/RenterDashboard";
 import { TiltCard, MagneticButton } from "../../components/smoothui";
 // Removed renter.css import to avoid conflicts
@@ -125,25 +126,27 @@ export default function EquipmentListPage() {
       {/* Tab selector */}
       <div className="mx-auto max-w-7xl px-6 py-4 flex space-x-3">
         <button
-          className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition shadow-sm ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition shadow-sm ${
             activeTab === "equipment"
               ? "bg-brand-700 text-white shadow-brand-700/20"
               : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
           }`}
           onClick={() => setActiveTab("equipment")}
         >
-          🚜 Equipment Catalog
+          <Truck className="w-4 h-4" />
+          <span>Equipment Catalog</span>
         </button>
         {canSeeRenterTab && (
           <button
-            className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition shadow-sm ${
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition shadow-sm ${
               activeTab === "renter"
                 ? "bg-brand-700 text-white shadow-brand-700/20"
                 : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
             }`}
             onClick={() => setActiveTab("renter")}
           >
-            📊 Financial Summary
+            <BarChart3 className="w-4 h-4" />
+            <span>Financial Summary</span>
           </button>
         )}
       </div>

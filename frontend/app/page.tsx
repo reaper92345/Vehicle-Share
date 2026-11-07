@@ -3,6 +3,24 @@
 import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { 
+  Truck, 
+  Coins, 
+  MapPin, 
+  Zap, 
+  FileText, 
+  ShieldCheck, 
+  Search, 
+  Calendar, 
+  CreditCard, 
+  Phone, 
+  Mail, 
+  CheckCircle2, 
+  Building2,
+  SlidersHorizontal,
+  BarChart3,
+  Send 
+} from "lucide-react";
 import {
   MagneticButton,
   TiltCard,
@@ -201,12 +219,14 @@ export default function HomePage() {
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <Link href="/equipment">
                   <MagneticButton className="btn-primary px-7 py-3.5 text-sm rounded-xl shadow-md shadow-brand-700/20 flex items-center gap-2">
-                    <span>🚜 Explore Catalog</span>
+                    <Truck className="w-4 h-4" />
+                    <span>Explore Catalog</span>
                   </MagneticButton>
                 </Link>
                 <Link href="/equipment/create">
                   <MagneticButton className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-6 py-3.5 text-sm rounded-xl shadow-md flex items-center gap-2">
-                    <span>💰 List Your Equipment</span>
+                    <Coins className="w-4 h-4 text-amber-400" />
+                    <span>List Your Equipment</span>
                   </MagneticButton>
                 </Link>
               </div>
@@ -250,7 +270,10 @@ export default function HomePage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-lg font-black text-slate-900">Volvo EC950F Heavy Excavator</h3>
-                      <p className="text-xs text-slate-500 mt-0.5">📍 Jagati, Bhaktapur · Construction & Mining</p>
+                      <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Jagati, Bhaktapur · Construction & Mining</span>
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-slate-500 font-medium">Daily Rate</p>
@@ -281,7 +304,7 @@ export default function HomePage() {
         >
           {/* Keyword Search */}
           <div className="flex-1 w-full flex items-center gap-2 rounded-xl bg-slate-50 px-3.5 py-2.5 border border-slate-200/80">
-            <span className="text-slate-400">🔍</span>
+            <Search className="w-4 h-4 text-slate-400 shrink-0" />
             <input
               type="text"
               placeholder="What equipment do you need? (e.g. Excavator, Mixer, Tiller)..."
@@ -293,7 +316,7 @@ export default function HomePage() {
 
           {/* Location Dropdown */}
           <div className="w-full md:w-52 flex items-center gap-2 rounded-xl bg-slate-50 px-3.5 py-2.5 border border-slate-200/80">
-            <span className="text-slate-400">📍</span>
+            <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
             <select
               value={selectedCity}
               onChange={(e) => setSelectedCity(e.target.value)}
@@ -311,7 +334,7 @@ export default function HomePage() {
 
           {/* Category Dropdown */}
           <div className="w-full md:w-52 flex items-center gap-2 rounded-xl bg-slate-50 px-3.5 py-2.5 border border-slate-200/80">
-            <span className="text-slate-400">⚙️</span>
+            <SlidersHorizontal className="w-4 h-4 text-slate-400 shrink-0" />
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
@@ -386,8 +409,9 @@ export default function HomePage() {
 
                   <div className="p-5">
                     <h3 className="font-bold text-lg text-slate-900 line-clamp-1">{item.title}</h3>
-                    <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                      <span>📍</span> {item.location}
+                    <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>{item.location}</span>
                       {item.owner_name && <span>· Owner: {item.owner_name}</span>}
                     </p>
 
@@ -429,8 +453,8 @@ export default function HomePage() {
                 activeTab={portalTab}
                 onChange={(tab) => setPortalTab(tab)}
                 tabs={[
-                  { id: "hirers" as const, label: "For Equipment Hirers (Renters)", icon: "🏗️" },
-                  { id: "listers" as const, label: "For Equipment Owners (Listers)", icon: "🚜" },
+                  { id: "hirers" as const, label: "For Equipment Hirers (Renters)", icon: <Building2 className="w-4 h-4" /> },
+                  { id: "listers" as const, label: "For Equipment Owners (Listers)", icon: <Truck className="w-4 h-4" /> },
                 ]}
               />
             </div>
@@ -439,8 +463,8 @@ export default function HomePage() {
           {portalTab === "hirers" ? (
             <div className="grid gap-6 md:grid-cols-3">
               <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-xl text-brand-700 font-bold">
-                  ⚡
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-brand-700 font-bold">
+                  <Zap className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">Instant Machinery Access</h3>
                 <p className="mt-2 text-xs text-slate-600 leading-relaxed">
@@ -449,8 +473,8 @@ export default function HomePage() {
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-xl text-brand-700 font-bold">
-                  🧾
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-brand-700 font-bold">
+                  <FileText className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">Official IRD Tax Invoices</h3>
                 <p className="mt-2 text-xs text-slate-600 leading-relaxed">
@@ -459,8 +483,8 @@ export default function HomePage() {
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-xl text-brand-700 font-bold">
-                  🛡️
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-brand-700 font-bold">
+                  <ShieldCheck className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">Legally Protected Handover</h3>
                 <p className="mt-2 text-xs text-slate-600 leading-relaxed">
@@ -471,8 +495,8 @@ export default function HomePage() {
           ) : (
             <div className="grid gap-6 md:grid-cols-3">
               <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-xl text-brand-700 font-bold">
-                  💰
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-brand-700 font-bold">
+                  <Coins className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">Turn Idle Equipment into Income</h3>
                 <p className="mt-2 text-xs text-slate-600 leading-relaxed">
@@ -481,8 +505,8 @@ export default function HomePage() {
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-xl text-brand-700 font-bold">
-                  📊
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-brand-700 font-bold">
+                  <BarChart3 className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">Live Telematics & Analytics</h3>
                 <p className="mt-2 text-xs text-slate-600 leading-relaxed">
@@ -491,8 +515,8 @@ export default function HomePage() {
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-xl text-brand-700 font-bold">
-                  ✅
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-brand-700 font-bold">
+                  <CheckCircle2 className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">Complete Booking Approval Control</h3>
                 <p className="mt-2 text-xs text-slate-600 leading-relaxed">
@@ -518,30 +542,30 @@ export default function HomePage() {
               step: "01",
               title: "Discover Machinery",
               desc: "Filter by location, daily rates, and machinery type. Compare specifications and real machine photos.",
-              icon: "🔍",
+              icon: <Search className="w-6 h-6 text-brand-700" />,
             },
             {
               step: "02",
               title: "Review & Agree to Terms",
               desc: "Select dates and project site. Review standardized rental agreements covering inspection and operator safety.",
-              icon: "📜",
+              icon: <FileText className="w-6 h-6 text-brand-700" />,
             },
             {
               step: "03",
               title: "Owner Approves & QR Pay",
               desc: "The owner approves your request. Settle securely via mobile banking QR (Fonepay/eSewa/ConnectIPS).",
-              icon: "📲",
+              icon: <CreditCard className="w-6 h-6 text-brand-700" />,
             },
             {
               step: "04",
               title: "Site Delivery & Tax Receipt",
               desc: "Receive the machine at your project site. An official IRD Tax Invoice (#INV) is emailed to you instantly.",
-              icon: "🚜",
+              icon: <Truck className="w-6 h-6 text-brand-700" />,
             },
           ].map((item) => (
             <div key={item.step} className="relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <span className="text-3xl font-black text-slate-200 absolute top-4 right-4">{item.step}</span>
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-2xl">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50">
                 {item.icon}
               </div>
               <h3 className="text-base font-bold text-slate-900">{item.title}</h3>
@@ -584,8 +608,8 @@ export default function HomePage() {
               </div>
 
               <div className="lg:col-span-4 flex flex-col items-center justify-center p-6 rounded-2xl bg-slate-900/80 border border-slate-700/60 text-center">
-                <div className="h-16 w-16 rounded-full border-2 border-emerald-400/60 flex items-center justify-center text-2xl mb-3">
-                  🛡️
+                <div className="h-16 w-16 rounded-full border-2 border-emerald-400/60 flex items-center justify-center text-emerald-400 mb-3">
+                  <ShieldCheck className="w-8 h-8" />
                 </div>
                 <h4 className="text-sm font-bold text-white">Verified Machine Guarantee</h4>
                 <p className="text-xs text-slate-400 mt-1">Pre-delivery checklist & standardized damage deposit protection.</p>
@@ -617,8 +641,8 @@ export default function HomePage() {
 
               <div className="space-y-4 text-xs text-slate-700">
                 <div className="flex items-start gap-3.5 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-lg text-brand-700">
-                    📍
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
+                    <MapPin className="w-5 h-5" />
                   </div>
                   <div>
                     <strong className="block text-slate-900 text-sm">Headquarters & Depot</strong>
@@ -630,8 +654,8 @@ export default function HomePage() {
                 </div>
 
                 <div className="flex items-start gap-3.5 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-lg text-brand-700">
-                    📞
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
+                    <Phone className="w-5 h-5" />
                   </div>
                   <div>
                     <strong className="block text-slate-900 text-sm">Direct Phone & Support Hotline</strong>
@@ -643,8 +667,8 @@ export default function HomePage() {
                 </div>
 
                 <div className="flex items-start gap-3.5 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-lg text-brand-700">
-                    ✉️
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
+                    <Mail className="w-5 h-5" />
                   </div>
                   <div>
                     <strong className="block text-slate-900 text-sm">Email Inquiries</strong>
@@ -732,9 +756,10 @@ export default function HomePage() {
                   <div className="pt-2">
                     <MagneticButton
                       type="submit"
-                      className="btn-primary w-full py-3 text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-brand-700/20"
+                      className="btn-primary w-full py-3 text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-brand-700/20 flex items-center justify-center gap-2"
                     >
-                      🚀 Submit Machinery Inquiry
+                      <Send className="w-4 h-4" />
+                      <span>Submit Machinery Inquiry</span>
                     </MagneticButton>
                   </div>
                 </form>

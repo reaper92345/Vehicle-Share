@@ -263,6 +263,9 @@ const updateEquipment = asyncHandler(async (req, res) => {
 
   const values = fields.map((field) => {
     const value = body[field];
+    if (field === "category" && typeof value === "string") {
+      return normalizeCategory(value);
+    }
     if (typeof value === "string") {
       return value.trim();
     }
@@ -276,7 +279,7 @@ const updateEquipment = asyncHandler(async (req, res) => {
      SET ${assignments.join(", ")}
      WHERE id = $${values.length - 1} AND owner_id = $${values.length}
      RETURNING id, owner_id, title, category, sub_category, description,
-               price_per_day, location, image_url, is_available, condition, manufacturer, year_of_manufacture, created_at`,
+               price_per_day, location, image_url, is_available, created_at`,
     values
   );
 

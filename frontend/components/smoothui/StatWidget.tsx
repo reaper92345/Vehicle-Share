@@ -7,7 +7,7 @@ import { cn } from "../../lib/utils";
 interface StatWidgetProps {
   label: string;
   value: string | number;
-  icon?: string;
+  icon?: React.ReactNode;
   trend?: string;
   className?: string;
   accentColor?: "emerald" | "amber" | "blue" | "brand";

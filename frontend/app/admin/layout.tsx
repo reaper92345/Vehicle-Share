@@ -4,6 +4,16 @@ import React, { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { jwtDecode } from "jwt-decode";
+import { 
+  Zap, 
+  BarChart3, 
+  Users, 
+  Truck, 
+  FileText, 
+  Globe, 
+  Menu, 
+  X 
+} from "lucide-react";
 import { MagneticButton } from "../../components/smoothui";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -62,11 +72,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   const navLinks = [
-    { label: "Command Center", href: "/admin", icon: "⚡" },
-    { label: "Analytics & VAT", href: "/admin/analytics", icon: "📊" },
-    { label: "User Directory", href: "/admin/users", icon: "👥" },
-    { label: "Machinery Fleet", href: "/admin/equipment", icon: "🚜" },
-    { label: "Rentals & Tax Invoices", href: "/admin/bookings", icon: "📑" },
+    { label: "Command Center", href: "/admin", icon: <Zap className="w-4 h-4 text-amber-400" /> },
+    { label: "Analytics & VAT", href: "/admin/analytics", icon: <BarChart3 className="w-4 h-4 text-emerald-400" /> },
+    { label: "User Directory", href: "/admin/users", icon: <Users className="w-4 h-4 text-blue-400" /> },
+    { label: "Machinery Fleet", href: "/admin/equipment", icon: <Truck className="w-4 h-4 text-orange-400" /> },
+    { label: "Rentals & Tax Invoices", href: "/admin/bookings", icon: <FileText className="w-4 h-4 text-indigo-400" /> },
   ];
 
   return (
@@ -123,8 +133,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           <div className="flex items-center gap-2">
             <Link href="/" className="w-full">
-              <button className="w-full text-center py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] font-bold text-slate-300 transition">
-                🌐 Public Website
+              <button className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] font-bold text-slate-300 transition">
+                <Globe className="w-3.5 h-3.5" />
+                <span>Public Website</span>
               </button>
             </Link>
           </div>
@@ -145,10 +156,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 rounded-lg bg-slate-800 text-slate-200 text-sm"
+          className="p-2 rounded-lg bg-slate-800 text-slate-200 text-sm flex items-center justify-center"
           aria-label="Toggle navigation menu"
         >
-          {sidebarOpen ? "✕" : "☰"}
+          {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
@@ -159,7 +170,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div>
               <div className="flex items-center justify-between pb-4 border-b border-slate-800">
                 <span className="font-bold text-white text-sm">Admin Navigation</span>
-                <button onClick={() => setSidebarOpen(false)} className="text-slate-400">✕</button>
+                <button onClick={() => setSidebarOpen(false)} className="text-slate-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
               <nav className="mt-4 space-y-2">
                 {navLinks.map((link) => (

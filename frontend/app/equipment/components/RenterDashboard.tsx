@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Truck, MapPin } from "lucide-react";
 import {
   TiltCard,
   MagneticButton,
@@ -397,7 +398,9 @@ export default function GlassRenterDashboard() {
                   {eq.image_url ? (
                     <img src={eq.image_url} alt={eq.title} className="h-full w-full object-cover" />
                   ) : (
-                    <div className="h-full w-full flex items-center justify-center text-3xl">🚜</div>
+                    <div className="h-full w-full flex items-center justify-center text-slate-400">
+                      <Truck className="w-8 h-8" />
+                    </div>
                   )}
                   <span className={`absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-md shadow-sm ${
                     activeBooking ? "bg-blue-600 text-white" : "bg-emerald-600 text-white"
@@ -411,7 +414,10 @@ export default function GlassRenterDashboard() {
                     <h4 className="font-bold text-slate-900 text-base">{eq.title}</h4>
                     <span className="text-xs font-black text-brand-700">रु{Number(eq.price_per_day).toLocaleString()}/d</span>
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">📍 {eq.location} · {eq.category}</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                    <span>{eq.location} · {eq.category}</span>
+                  </p>
 
                   {activeBooking && (
                     <div className="mt-2 rounded-xl bg-blue-50/80 border border-blue-200/80 p-2 text-[11px]">

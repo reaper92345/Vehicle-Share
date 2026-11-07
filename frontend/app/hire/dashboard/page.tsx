@@ -3,6 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { 
+  Truck, 
+  CheckCircle, 
+  Clock, 
+  CreditCard, 
+  BarChart3, 
+  Navigation, 
+  Users 
+} from "lucide-react";
 import PortalNav from "../../../components/PortalNav";
 import { AnimatedTabs, StatWidget, MagneticButton, useNotification } from "../../../components/smoothui";
 import { EquipmentTrackingMap } from "../../../components/EquipmentTrackingMap";
@@ -168,25 +177,25 @@ export default function HireDashboard() {
             <StatWidget
               label="Active rentals"
               value={active.length}
-              icon="🚜"
+              icon={<Truck className="w-4 h-4" />}
               accentColor="brand"
             />
             <StatWidget
               label="Completed"
               value={completed.length}
-              icon="✅"
+              icon={<CheckCircle className="w-4 h-4" />}
               accentColor="blue"
             />
             <StatWidget
               label="Outstanding"
               value={`रु${outstanding.toLocaleString()}`}
-              icon="⏳"
+              icon={<Clock className="w-4 h-4" />}
               accentColor="amber"
             />
             <StatWidget
               label="Paid invoices"
               value={paid.length}
-              icon="💳"
+              icon={<CreditCard className="w-4 h-4" />}
               accentColor="emerald"
             />
           </div>
@@ -197,11 +206,11 @@ export default function HireDashboard() {
             activeTab={tab}
             onChange={(newTab) => setTab(newTab)}
             tabs={[
-              { id: "overview" as const, label: "Overview", icon: "📊" },
-              { id: "active" as const, label: "Active machinery", badge: active.length, icon: "🚜" },
-              { id: "tracking" as const, label: "Live Telematics & GPS", icon: "🗺️" },
-              { id: "payments" as const, label: "Payments", badge: paid.length, icon: "💳" },
-              { id: "directory" as const, label: "Providers", icon: "👥" },
+              { id: "overview" as const, label: "Overview", icon: <BarChart3 className="w-4 h-4" /> },
+              { id: "active" as const, label: "Active machinery", badge: active.length, icon: <Truck className="w-4 h-4" /> },
+              { id: "tracking" as const, label: "Live Telematics & GPS", icon: <Navigation className="w-4 h-4" /> },
+              { id: "payments" as const, label: "Payments", badge: paid.length, icon: <CreditCard className="w-4 h-4" /> },
+              { id: "directory" as const, label: "Providers", icon: <Users className="w-4 h-4" /> },
             ]}
           />
         </div>

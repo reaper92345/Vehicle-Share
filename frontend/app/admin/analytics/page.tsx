@@ -2,6 +2,15 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { 
+  RotateCw, 
+  Coins, 
+  BarChart3, 
+  Receipt, 
+  Truck,
+  CheckCircle2,
+  FileSpreadsheet
+} from "lucide-react";
 import {
   StatWidget,
   MagneticButton,
@@ -159,7 +168,8 @@ export default function DetailedAdminAnalyticsPage() {
             onClick={fetchStats}
             className="btn-secondary text-xs py-2 px-3.5 rounded-xl border border-slate-200 flex items-center gap-1.5 shadow-xs"
           >
-            🔄 Refresh Audit
+            <RotateCw className="w-3.5 h-3.5" />
+            <span>Refresh Audit</span>
           </MagneticButton>
         </div>
       </div>
@@ -168,8 +178,9 @@ export default function DetailedAdminAnalyticsPage() {
       <div className="rounded-2xl border border-slate-800 bg-slate-900 text-white p-6 shadow-md">
         <div className="grid gap-6 md:grid-cols-12 md:items-center">
           <div className="md:col-span-8 space-y-2">
-            <span className="rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-0.5 text-[11px] font-bold">
-              ✓ Inland Revenue Department Verified Company
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-0.5 text-[11px] font-bold">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Inland Revenue Department Verified Company
             </span>
             <h3 className="text-xl font-bold text-white">
               EquipShare Marketplace Nepal Pvt. Ltd.
@@ -208,28 +219,28 @@ export default function DetailedAdminAnalyticsPage() {
           label="Gross Commercial Turnover"
           value={`रु ${vatBreakdown.gross.toLocaleString()}`}
           trend="Total Platform Billings"
-          icon="💰"
+          icon={<Coins className="w-4 h-4" />}
           accentColor="emerald"
         />
         <StatWidget
           label="Taxable Base Sales"
           value={`रु ${vatBreakdown.taxable.toLocaleString()}`}
           trend="Pre-VAT Net Amount"
-          icon="📊"
+          icon={<BarChart3 className="w-4 h-4" />}
           accentColor="brand"
         />
         <StatWidget
           label="13% VAT Remittance"
           value={`रु ${vatBreakdown.vat.toLocaleString()}`}
           trend="Nepal Inland Revenue Pool"
-          icon="🧾"
+          icon={<Receipt className="w-4 h-4" />}
           accentColor="amber"
         />
         <StatWidget
           label="Active Heavy Machinery"
           value={stats.totalEquipment}
           trend={`${stats.activeBookings} Currently Deployed`}
-          icon="🚜"
+          icon={<Truck className="w-4 h-4" />}
           accentColor="blue"
         />
       </div>

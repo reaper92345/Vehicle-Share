@@ -4,6 +4,19 @@ import { useEffect, useState, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { jwtDecode } from "jwt-decode";
+import { 
+  Truck, 
+  MapPin, 
+  Calendar, 
+  AlertTriangle, 
+  FileText, 
+  Search, 
+  Fuel, 
+  ShieldCheck, 
+  Clock, 
+  Receipt, 
+  ArrowLeft 
+} from "lucide-react";
 import { SmoothModal, MagneticButton, useNotification } from "../../../components/smoothui";
 import { EquipmentTrackingMap, LocationPoint, calculateMobilizationCharge, calculateNepalRoadDistanceKm, DEPOT_ORIGIN } from "../../../components/EquipmentTrackingMap";
 
@@ -359,8 +372,8 @@ function CreateBookingContent() {
         {/* Missing Equipment Fallback */}
         {!loading && !equipment && (
           <div className="card p-12 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-2xl text-slate-500 mb-4">
-              🚜
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-500 mb-4">
+              <Truck className="w-7 h-7" />
             </div>
             <h2 className="text-xl font-bold text-slate-800">No Equipment Selected</h2>
             <p className="text-slate-600 mt-2 max-w-md mx-auto">
@@ -386,7 +399,7 @@ function CreateBookingContent() {
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-slate-200 text-slate-400">
-                    <span className="text-4xl">🚜</span>
+                    <Truck className="w-12 h-12" />
                   </div>
                 )}
                 <div className="absolute top-4 left-4 flex gap-2">
@@ -405,9 +418,9 @@ function CreateBookingContent() {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h1 className="text-2xl font-bold text-slate-900">{equipment.title}</h1>
-                    <p className="mt-1 flex items-center text-sm text-slate-500">
-                      <span className="mr-1">📍</span>
-                      {equipment.location}
+                    <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
+                      <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span>{equipment.location}</span>
                     </p>
                   </div>
                   <div className="text-right">
@@ -446,9 +459,10 @@ function CreateBookingContent() {
                       {equipment.booked_dates.map((b, idx) => (
                         <span
                           key={idx}
-                          className="inline-flex items-center rounded-lg bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800"
+                          className="inline-flex items-center gap-1 rounded-lg bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800"
                         >
-                          📅 {b.start_date.slice(0, 10)} to {b.end_date.slice(0, 10)}
+                          <Calendar className="w-3 h-3 text-amber-800 shrink-0" />
+                          <span>{b.start_date.slice(0, 10)} to {b.end_date.slice(0, 10)}</span>
                         </span>
                       ))}
                     </div>
@@ -514,8 +528,9 @@ function CreateBookingContent() {
 
                 {/* Overlap Conflict Notice */}
                 {dateConflict && (
-                  <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-                    ⚠️ Selected dates overlap with an existing booking ({dateConflict.start} to {dateConflict.end}). Please adjust your dates.
+                  <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
+                    <span>Selected dates overlap with an existing booking ({dateConflict.start} to {dateConflict.end}). Please adjust your dates.</span>
                   </div>
                 )}
 
@@ -588,7 +603,7 @@ function CreateBookingContent() {
                       onClick={() => setShowTerms(true)}
                       className="mt-2.5 inline-flex items-center gap-1.5 text-[11px] font-semibold text-brand-700 hover:text-brand-900 bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-100"
                     >
-                      <span>📜</span>
+                      <FileText className="w-3.5 h-3.5" />
                       <span>Review Terms & Conditions (Required before booking)</span>
                     </button>
                   )}
@@ -649,7 +664,8 @@ function CreateBookingContent() {
           <div className="max-h-[55vh] overflow-y-auto pr-2 space-y-3.5 text-xs text-slate-700 leading-relaxed border-y border-slate-100 py-3">
             <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80">
               <h4 className="font-bold text-slate-900 mb-1 flex items-center gap-1.5 text-xs">
-                <span>🔍</span> 1. Machinery Condition on Handover & Inspection
+                <Search className="w-3.5 h-3.5 text-slate-700" />
+                <span>1. Machinery Condition on Handover & Inspection</span>
               </h4>
               <p>
                 The hire customer is obligated to thoroughly inspect the machine at the designated project site/depot upon delivery. Pre-existing wear, fluid leaks, structural damage, or missing attachments must be recorded in writing with photographs prior to operation. Operating the machine constitutes acceptance of its sound working order.
@@ -658,7 +674,8 @@ function CreateBookingContent() {
 
             <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80">
               <h4 className="font-bold text-slate-900 mb-1 flex items-center gap-1.5 text-xs">
-                <span>⛽</span> 2. Fuel Policy & Certified Operator Liability
+                <Fuel className="w-3.5 h-3.5 text-slate-700" />
+                <span>2. Fuel Policy & Certified Operator Liability</span>
               </h4>
               <p>
                 Equipment is delivered with a documented fuel level and must be returned with an equivalent level; refueling surcharges apply otherwise. Only certified, licensed heavy-machinery operators may handle the equipment. The hire customer assumes full legal and financial liability for operator negligence, project-site safety infractions, and third-party damages.
@@ -667,7 +684,8 @@ function CreateBookingContent() {
 
             <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80">
               <h4 className="font-bold text-slate-900 mb-1 flex items-center gap-1.5 text-xs">
-                <span>🛡️</span> 3. Security Deposit & Return Delay Penalties
+                <ShieldCheck className="w-3.5 h-3.5 text-slate-700" />
+                <span>3. Security Deposit & Return Delay Penalties</span>
               </h4>
               <p>
                 Equipment owners reserve the right to request a refundable damage deposit. Delays past the agreed end date without approved extensions will incur a daily penalty rate of the base daily fee plus 20%, along with any associated dispatch/standby recovery costs.
@@ -676,7 +694,8 @@ function CreateBookingContent() {
 
             <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80">
               <h4 className="font-bold text-slate-900 mb-1 flex items-center gap-1.5 text-xs">
-                <span>⏱️</span> 4. Cancellation & Refund Policy
+                <Clock className="w-3.5 h-3.5 text-slate-700" />
+                <span>4. Cancellation & Refund Policy</span>
               </h4>
               <p>
                 Cancellations requested prior to owner approval are 100% free with no penalty. Cancellations made more than 48 hours prior to start date receive a 50% refund. Cancellations made inside 48 hours or after equipment mobilization are non-refundable.
@@ -685,7 +704,8 @@ function CreateBookingContent() {
 
             <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80">
               <h4 className="font-bold text-slate-900 mb-1 flex items-center gap-1.5 text-xs">
-                <span>🧾</span> 5. Payment Confirmation & Electronic Invoice Receipt
+                <Receipt className="w-3.5 h-3.5 text-slate-700" />
+                <span>5. Payment Confirmation & Electronic Invoice Receipt</span>
               </h4>
               <p>
                 Rental transactions are processed in Nepalese Rupees (NPR रु) via secure QR payment settlement. Upon payment confirmation, an official invoice receipt detailing the rental timeline, equipment specifications, and transaction ID is automatically delivered to the hire customer's registered email.

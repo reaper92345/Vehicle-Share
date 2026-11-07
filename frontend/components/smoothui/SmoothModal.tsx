@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { X } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 interface SmoothModalProps {
@@ -73,7 +74,7 @@ export function SmoothModal({
                 style={{ color: "#A3A3A3" }}
                 aria-label="Close"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 

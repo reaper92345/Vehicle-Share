@@ -2,6 +2,18 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { 
+  Truck, 
+  ClipboardList, 
+  MapPin, 
+  Calendar, 
+  Phone, 
+  Mail, 
+  QrCode, 
+  Check, 
+  X,
+  ExternalLink 
+} from "lucide-react";
 import { AnimatedTabs } from "../../components/smoothui/AnimatedTabs";
 import { MagneticButton } from "../../components/smoothui/MagneticButton";
 import { TiltCard } from "../../components/smoothui/TiltCard";
@@ -347,7 +359,7 @@ export default function BookingsPage() {
                         id: "owner" as const,
                         label: "Incoming Requests (My Equipment)",
                         badge: pendingOwnerCount,
-                        icon: "🚜",
+                        icon: <Truck className="w-4 h-4" />,
                       },
                     ]
                   : []),
@@ -357,7 +369,7 @@ export default function BookingsPage() {
                         id: "renter" as const,
                         label: "My Rentals (Booked by Me)",
                         badge: renterBookings.length,
-                        icon: "📋",
+                        icon: <ClipboardList className="w-4 h-4" />,
                       },
                     ]
                   : []),
@@ -382,8 +394,8 @@ export default function BookingsPage() {
         {/* Empty State */}
         {!loading && token && currentBookings.length === 0 && (
           <div className="card mt-4 p-12 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-3xl mb-4">
-              {activeTab === "owner" ? "🚜" : "📋"}
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-500 mb-4">
+              {activeTab === "owner" ? <Truck className="w-8 h-8" /> : <ClipboardList className="w-8 h-8" />}
             </div>
             <h2 className="text-xl font-bold text-slate-900">
               {activeTab === "owner" ? "No Incoming Requests" : "No Bookings Yet"}
@@ -423,8 +435,8 @@ export default function BookingsPage() {
                       className="h-24 w-24 rounded-xl object-cover border border-slate-100 flex-shrink-0"
                     />
                   ) : (
-                    <div className="h-24 w-24 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-3xl flex-shrink-0">
-                      🚜
+                    <div className="h-24 w-24 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 flex-shrink-0">
+                      <Truck className="w-8 h-8" />
                     </div>
                   )}
 
@@ -451,20 +463,33 @@ export default function BookingsPage() {
                         <div className="flex flex-wrap items-center gap-2 text-slate-700">
                           <span className="font-semibold">Renter:</span>
                           <span>{b.renter_name || "Renter User"}</span>
-                          {b.renter_phone && <span>• 📞 {b.renter_phone}</span>}
-                          {b.renter_email && <span>• ✉️ {b.renter_email}</span>}
+                          {b.renter_phone && (
+                            <span className="flex items-center gap-1">
+                              • <Phone className="w-3 h-3 text-slate-400" /> {b.renter_phone}
+                            </span>
+                          )}
+                          {b.renter_email && (
+                            <span className="flex items-center gap-1">
+                              • <Mail className="w-3 h-3 text-slate-400" /> {b.renter_email}
+                            </span>
+                          )}
                         </div>
                       ) : (
-                        <div>
-                          {b.location && <span>📍 {b.location} • </span>}
+                        <div className="flex items-center gap-1.5">
+                          {b.location && (
+                            <span className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-slate-400" /> {b.location} •
+                            </span>
+                          )}
                           {b.owner_name && <span>Owner: {b.owner_name}</span>}
                         </div>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-3 text-xs font-medium text-slate-600 pt-1">
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 pt-1">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
                       <span>
-                        📅 {String(b.start_date).slice(0, 10)} to {String(b.end_date).slice(0, 10)}
+                        {String(b.start_date).slice(0, 10)} to {String(b.end_date).slice(0, 10)}
                       </span>
                     </div>
 
@@ -517,9 +542,10 @@ export default function BookingsPage() {
                       {(b.status === "Approved" || b.status === "Active") && b.payment_status !== "paid" && (
                         <MagneticButton
                           onClick={() => handleOpenPayment(b)}
-                          className="btn-primary text-xs py-2 px-4 whitespace-nowrap bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl"
+                          className="btn-primary text-xs py-2 px-4 whitespace-nowrap bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center gap-1.5"
                         >
-                          📲 Pay with QR
+                          <QrCode className="w-3.5 h-3.5" />
+                          <span>Pay with QR</span>
                         </MagneticButton>
                       )}
 
@@ -595,9 +621,10 @@ export default function BookingsPage() {
                       href={receiptInfo.previewUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-bold text-brand-700 underline hover:text-brand-900"
+                      className="inline-flex items-center gap-1 font-bold text-brand-700 underline hover:text-brand-900"
                     >
-                      🔗 Open Email Preview (Ethereal Mailbox)
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Open Email Preview (Ethereal Mailbox)</span>
                     </a>
                   </p>
                 )}

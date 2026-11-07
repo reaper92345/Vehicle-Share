@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { Check, X, AlertTriangle, Info, FileText } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 export type NotificationType = "success" | "error" | "warning" | "info" | "tax_invoice";
@@ -150,7 +151,7 @@ function getToastConfig(type: NotificationType) {
   switch (type) {
     case "success":
       return {
-        icon: "✓",
+        icon: <Check className="w-4 h-4" strokeWidth={2.5} />,
         bg: "#FFFFFF",
         border: "rgba(6,95,70,0.15)",
         iconBg: "#ECFDF5",
@@ -159,7 +160,7 @@ function getToastConfig(type: NotificationType) {
       };
     case "error":
       return {
-        icon: "✕",
+        icon: <X className="w-4 h-4" strokeWidth={2.5} />,
         bg: "#FFFFFF",
         border: "rgba(153,27,27,0.15)",
         iconBg: "#FEF2F2",
@@ -168,7 +169,7 @@ function getToastConfig(type: NotificationType) {
       };
     case "warning":
       return {
-        icon: "!",
+        icon: <AlertTriangle className="w-4 h-4" strokeWidth={2.5} />,
         bg: "#FFFFFF",
         border: "rgba(146,64,14,0.15)",
         iconBg: "#FFFBEB",
@@ -177,7 +178,7 @@ function getToastConfig(type: NotificationType) {
       };
     case "tax_invoice":
       return {
-        icon: "🧾",
+        icon: <FileText className="w-4 h-4" strokeWidth={2.5} />,
         bg: "#0F172A",
         border: "rgba(255,255,255,0.08)",
         iconBg: "rgba(255,255,255,0.07)",
@@ -187,7 +188,7 @@ function getToastConfig(type: NotificationType) {
     case "info":
     default:
       return {
-        icon: "ℹ",
+        icon: <Info className="w-4 h-4" strokeWidth={2.5} />,
         bg: "#FFFFFF",
         border: "rgba(46,111,61,0.15)",
         iconBg: "#f0f7f1",

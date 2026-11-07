@@ -2,6 +2,15 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { 
+  RotateCw, 
+  LayoutGrid, 
+  Table as TableIcon, 
+  MapPin, 
+  Navigation, 
+  Trash2, 
+  Search 
+} from "lucide-react";
 import {
   MagneticButton,
   TiltCard,
@@ -152,26 +161,29 @@ export default function DetailedAdminEquipmentPage() {
           <div className="rounded-xl border border-slate-200 bg-white p-1 flex items-center">
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-1.5 px-3 rounded-lg text-xs font-bold transition ${
+              className={`flex items-center gap-1.5 p-1.5 px-3 rounded-lg text-xs font-bold transition ${
                 viewMode === "grid" ? "bg-slate-900 text-white" : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              ⊞ Card Grid
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>Card Grid</span>
             </button>
             <button
               onClick={() => setViewMode("table")}
-              className={`p-1.5 px-3 rounded-lg text-xs font-bold transition ${
+              className={`flex items-center gap-1.5 p-1.5 px-3 rounded-lg text-xs font-bold transition ${
                 viewMode === "table" ? "bg-slate-900 text-white" : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              ☰ Data Table
+              <TableIcon className="w-3.5 h-3.5" />
+              <span>Data Table</span>
             </button>
           </div>
           <MagneticButton
             onClick={fetchEquipment}
             className="btn-secondary text-xs py-2 px-3.5 rounded-xl border border-slate-200 flex items-center gap-1.5 shadow-xs"
           >
-            🔄 Refresh
+            <RotateCw className="w-3.5 h-3.5" />
+            <span>Refresh</span>
           </MagneticButton>
         </div>
       </div>
@@ -237,7 +249,8 @@ export default function DetailedAdminEquipmentPage() {
                 <div className="p-5">
                   <h3 className="font-bold text-base text-slate-900 line-clamp-1">{eq.title}</h3>
                   <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                    <span>📍</span> {eq.location}
+                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span>{eq.location}</span>
                     {eq.owner_name && <span>· Owner: {eq.owner_name}</span>}
                   </p>
 
@@ -263,9 +276,10 @@ export default function DetailedAdminEquipmentPage() {
                       </button>
                       <button
                         onClick={() => setTrackEquipment(eq)}
-                        className="text-[10px] font-bold px-2 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800"
+                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition"
                       >
-                        🗺️ GPS
+                        <Navigation className="w-3 h-3 text-emerald-400" />
+                        <span>GPS</span>
                       </button>
                     </div>
                   </div>
@@ -318,7 +332,12 @@ export default function DetailedAdminEquipmentPage() {
                       </div>
                     </td>
                     <td className="p-3.5 font-medium text-slate-600">{eq.category}</td>
-                    <td className="p-3.5 text-slate-700">📍 {eq.location}</td>
+                    <td className="p-3.5 text-slate-700">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span>{eq.location}</span>
+                      </div>
+                    </td>
                     <td className="p-3.5 font-bold text-brand-700">
                       रु {Number(eq.price_per_day).toLocaleString()}/day
                     </td>
@@ -414,9 +433,10 @@ export default function DetailedAdminEquipmentPage() {
             <div className="flex items-center justify-between pt-2">
               <button
                 onClick={() => deleteEquipment(inspectEquipment.id)}
-                className="text-rose-600 hover:text-rose-800 font-bold text-xs"
+                className="inline-flex items-center gap-1.5 text-rose-600 hover:text-rose-800 font-bold text-xs transition"
               >
-                🗑️ Permanently Delete Listing
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Permanently Delete Listing</span>
               </button>
               <MagneticButton
                 onClick={() => setInspectEquipment(null)}

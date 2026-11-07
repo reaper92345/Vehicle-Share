@@ -3,6 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { 
+  Coins, 
+  Truck, 
+  TrendingUp, 
+  Clock, 
+  MapPin, 
+  Navigation, 
+  CreditCard, 
+  Users,
+  Search,
+  Phone,
+  Mail,
+  Pencil
+} from "lucide-react";
 import PortalNav from "../../../components/PortalNav";
 import {
   AnimatedTabs,
@@ -281,28 +295,28 @@ export default function ModernOwnerDashboard() {
             <StatWidget
               label="Total Earnings"
               value={`रु${totalEarnings.toLocaleString()}`}
-              icon="💰"
+              icon={<Coins className="w-4 h-4" />}
               accentColor="emerald"
               trend="Verified paid income"
             />
             <StatWidget
               label="Active Deployments"
               value={activeDeployments.length}
-              icon="🚜"
+              icon={<Truck className="w-4 h-4" />}
               accentColor="brand"
               trend="Working at project sites"
             />
             <StatWidget
               label="Fleet Utilization"
               value={`${utilizationRate}%`}
-              icon="📈"
+              icon={<TrendingUp className="w-4 h-4" />}
               accentColor="blue"
               trend={`${equipment.length} machine(s) in fleet`}
             />
             <StatWidget
               label="Pending Requests"
               value={pendingCount}
-              icon="⏳"
+              icon={<Clock className="w-4 h-4" />}
               accentColor="amber"
               trend="Awaiting your approval"
             />
@@ -396,11 +410,11 @@ export default function ModernOwnerDashboard() {
             activeTab={tab}
             onChange={(newTab) => setTab(newTab)}
             tabs={[
-              { id: "overview" as const, label: "Fleet Overview", icon: "🚜", badge: equipment.length },
-              { id: "deployments" as const, label: "Deployment & Return Monitor", badge: activeDeployments.length, icon: "📍" },
-              { id: "tracking" as const, label: "Google Maps Telematics", icon: "🗺️" },
-              { id: "payments" as const, label: "Payment Ledger", badge: paidBookings.length, icon: "💳" },
-              { id: "directory" as const, label: "User Directory", icon: "👥" },
+              { id: "overview" as const, label: "Fleet Overview", icon: <Truck className="w-4 h-4" />, badge: equipment.length },
+              { id: "deployments" as const, label: "Deployment & Return Monitor", badge: activeDeployments.length, icon: <MapPin className="w-4 h-4" /> },
+              { id: "tracking" as const, label: "Google Maps Telematics", icon: <Navigation className="w-4 h-4" /> },
+              { id: "payments" as const, label: "Payment Ledger", badge: paidBookings.length, icon: <CreditCard className="w-4 h-4" /> },
+              { id: "directory" as const, label: "User Directory", icon: <Users className="w-4 h-4" /> },
             ]}
           />
         </div>
@@ -445,7 +459,9 @@ export default function ModernOwnerDashboard() {
                         {eq.image_url ? (
                           <img src={eq.image_url} alt={eq.title} className="h-44 w-full object-cover rounded-t-xl" />
                         ) : (
-                          <div className="h-44 w-full bg-slate-100 flex items-center justify-center text-4xl">🚜</div>
+                          <div className="h-44 w-full bg-slate-100 flex items-center justify-center text-slate-400">
+                            <Truck className="w-12 h-12" />
+                          </div>
                         )}
                         <div className="p-5">
                           <div className="flex items-center justify-between mb-2">
@@ -459,7 +475,10 @@ export default function ModernOwnerDashboard() {
                             </span>
                           </div>
                           <h3 className="font-bold text-lg text-slate-900">{eq.title}</h3>
-                          <p className="text-xs text-slate-500 mt-0.5">📍 {eq.location}</p>
+                          <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span>{eq.location}</span>
+                          </p>
 
                           <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                             <span className="font-semibold text-brand-700 text-sm">रु{Number(eq.price_per_day).toLocaleString()}/day</span>
@@ -468,13 +487,20 @@ export default function ModernOwnerDashboard() {
                         </div>
                       </div>
 
-                      <div className="p-5 pt-0">
+                      <div className="p-5 pt-0 space-y-2">
                         <MagneticButton
                           onClick={() => setSelectedMachine(eq)}
                           className="w-full btn-secondary text-xs py-2 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-1.5"
                         >
-                          🔍 Inspect Details & Logs
+                          <Search className="w-3.5 h-3.5" />
+                          <span>Inspect Details & Logs</span>
                         </MagneticButton>
+                        <Link href={`/equipment/edit/${eq.id}`}>
+                          <MagneticButton className="w-full text-xs py-2 rounded-xl border border-brand-200 bg-brand-50 hover:bg-brand-100 text-brand-700 font-medium flex items-center justify-center gap-1.5 transition-colors">
+                            <Pencil className="w-3.5 h-3.5" />
+                            <span>Edit Listing</span>
+                          </MagneticButton>
+                        </Link>
                       </div>
                     </TiltCard>
                   );
@@ -511,10 +537,18 @@ export default function ModernOwnerDashboard() {
                         Project Site: <span className="font-medium text-slate-700">{live?.deployment_location || live?.location || eq.location}</span>
                       </p>
                       {live ? (
-                        <div className="text-xs text-slate-600 pt-1">
-                          Renter: <span className="font-semibold text-slate-800">{live.renter_name}</span>
-                          {live.renter_phone && ` · 📞 ${live.renter_phone}`}
-                          {live.renter_email && ` · ✉️ ${live.renter_email}`}
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 pt-1">
+                          <span>Renter: <strong className="font-semibold text-slate-800">{live.renter_name}</strong></span>
+                          {live.renter_phone && (
+                            <span className="flex items-center gap-1">
+                              · <Phone className="w-3 h-3 text-slate-400" /> {live.renter_phone}
+                            </span>
+                          )}
+                          {live.renter_email && (
+                            <span className="flex items-center gap-1">
+                              · <Mail className="w-3 h-3 text-slate-400" /> {live.renter_email}
+                            </span>
+                          )}
                         </div>
                       ) : (
                         <p className="text-xs text-slate-400 italic">No active deployment currently assigned</p>

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { RotateCw, Trash2, Search, UserCheck, ShieldAlert, ShieldCheck } from "lucide-react";
 import {
   MagneticButton,
   SmoothModal,
@@ -142,7 +143,8 @@ export default function DetailedAdminUsersPage() {
           onClick={fetchUsers}
           className="btn-secondary text-xs py-2 px-3.5 rounded-xl border border-slate-200 flex items-center gap-1.5 shadow-xs"
         >
-          🔄 Refresh Directory
+          <RotateCw className="w-3.5 h-3.5" />
+          <span>Refresh Directory</span>
         </MagneticButton>
       </div>
 
@@ -315,9 +317,10 @@ export default function DetailedAdminUsersPage() {
             <div className="flex items-center justify-between pt-2">
               <button
                 onClick={() => deleteUser(selectedUser.id)}
-                className="text-rose-600 hover:text-rose-800 font-bold text-xs"
+                className="inline-flex items-center gap-1.5 text-rose-600 hover:text-rose-800 font-bold text-xs transition"
               >
-                🗑️ Permanently Delete Account
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Permanently Delete Account</span>
               </button>
               <MagneticButton
                 onClick={() => setSelectedUser(null)}
