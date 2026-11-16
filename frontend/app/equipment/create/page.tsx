@@ -14,6 +14,7 @@ export default function CreateEquipmentPage() {
     price_per_day: "",
     location: "",
     image_url: "",
+    quantity: 1,
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -109,6 +110,12 @@ export default function CreateEquipmentPage() {
       const msg = "Price per day must be a positive number up to 1 000 000 000.";
       errors.push(msg);
       fieldErrorMap.price_per_day = msg;
+    }
+    const qty = Number(form.quantity);
+    if (isNaN(qty) || !Number.isInteger(qty) || qty < 1 || qty > 1000) {
+      const msg = "Available units must be an integer between 1 and 1,000.";
+      errors.push(msg);
+      fieldErrorMap.quantity = msg;
     }
     if (!form.location.trim() || form.location.trim().length > 200) {
       const msg = "Location is required and must be ≤ 200 characters.";
@@ -284,6 +291,39 @@ export default function CreateEquipmentPage() {
                   <p className="mt-1 text-sm text-red-600">{fieldErrors.location}</p>
                 )}
               </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Equipment Inventory / Units</label>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, quantity: Math.max(1, (Number(form.quantity) || 1) - 1) })}
+                  className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-slate-50 font-bold text-slate-700 hover:bg-slate-100"
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  min={1}
+                  max={1000}
+                  className="input max-w-[120px] text-center font-bold"
+                  value={form.quantity}
+                  onChange={(e) => setForm({ ...form, quantity: Math.max(1, parseInt(e.target.value, 10) || 1) })}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, quantity: Math.min(1000, (Number(form.quantity) || 1) + 1) })}
+                  className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-brand-50 text-brand-700 font-bold hover:bg-brand-100"
+                >
+                  +
+                </button>
+                <span className="text-xs text-slate-500 ml-2">Number of same equipment units available</span>
+              </div>
+              {fieldErrors.quantity && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.quantity}</p>
+              )}
             </div>
 
             <div>

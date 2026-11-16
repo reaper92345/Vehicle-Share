@@ -28,6 +28,7 @@ CREATE TABLE equipment (
     location VARCHAR(200) NOT NULL,
     image_url TEXT,
     is_available BOOLEAN NOT NULL DEFAULT TRUE,
+    quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity >= 1),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

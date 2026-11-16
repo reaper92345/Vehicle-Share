@@ -52,6 +52,14 @@ const EQUIPMENT_FIELDS = {
     required: false,
   },
   is_available: { column: "is_available", validate: (value) => typeof value === "boolean", required: false },
+  quantity: {
+    column: "quantity",
+    validate: (value) => {
+      const num = typeof value === "number" ? value : Number(value);
+      return Number.isInteger(num) && num >= 1 && num <= 1000;
+    },
+    required: false,
+  },
   // New optional fields
   condition: { column: "condition", validate: (value) => typeof value === "string" && isNonEmptyString(value, 100), required: false },
   manufacturer: { column: "manufacturer", validate: (value) => typeof value === "string" && isNonEmptyString(value, 120), required: false },
@@ -130,7 +138,7 @@ const listEquipment = asyncHandler(async (req, res) => {
 
   const { rows } = await pool.query(
     `SELECT e.id, e.owner_id, e.title, e.category, e.sub_category, e.description,
-            e.price_per_day, e.location, e.image_url, e.is_available, e.created_at,
+            e.price_per_day, e.location, e.image_url, e.is_available, COALESCE(e.quantity, 1) AS quantity, e.created_at,
              u.full_name AS owner_name, u.email AS owner_email, u.phone_number AS owner_phone
      FROM equipment e
      JOIN users u ON u.id = e.owner_id
@@ -151,7 +159,7 @@ const getEquipmentById = asyncHandler(async (req, res) => {
 
   const { rows } = await pool.query(
     `SELECT e.id, e.owner_id, e.title, e.category, e.sub_category, e.description,
-            e.price_per_day, e.location, e.image_url, e.is_available, e.created_at,
+            e.price_per_day, e.location, e.image_url, e.is_available, COALESCE(e.quantity, 1) AS quantity, e.created_at,
            u.full_name AS owner_name, u.email AS owner_email, u.phone_number AS owner_phone
      FROM equipment e
      JOIN users u ON u.id = e.owner_id
@@ -187,7 +195,7 @@ const getEquipmentById = asyncHandler(async (req, res) => {
 const listMyEquipment = asyncHandler(async (req, res) => {
   const { rows } = await pool.query(
     `SELECT e.id, e.owner_id, e.title, e.category, e.sub_category, e.description,
-            e.price_per_day, e.location, e.image_url, e.is_available, e.created_at
+            e.price_per_day, e.location, e.image_url, e.is_available, COALESCE(e.quantity, 1) AS quantity, e.created_at
      FROM equipment e
      WHERE e.owner_id = $1
      ORDER BY e.created_at DESC, e.id`,
@@ -199,7 +207,7 @@ const listMyEquipment = asyncHandler(async (req, res) => {
 const listAllEquipmentAdmin = asyncHandler(async (req, res) => {
   const { rows } = await pool.query(
     `SELECT e.id, e.owner_id, e.title, e.category, e.sub_category, e.description,
-            e.price_per_day, e.location, e.image_url, e.is_available, e.created_at,
+            e.price_per_day, e.location, e.image_url, e.is_available, COALESCE(e.quantity, 1) AS quantity, e.created_at,
             u.full_name AS owner_name, u.email AS owner_email
      FROM equipment e
      JOIN users u ON u.id = e.owner_id
@@ -219,13 +227,15 @@ const createEquipment = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "Invalid equipment listing.", details: errors });
   }
 
+  const quantity = body.quantity !== undefined ? Number(body.quantity) : 1;
+
   const { rows } = await pool.query(
     `INSERT INTO equipment
        (owner_id, title, category, sub_category, description, price_per_day,
-        location, image_url, is_available)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        location, image_url, is_available, quantity)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      RETURNING id, owner_id, title, category, sub_category, description,
-               price_per_day, location, image_url, is_available, created_at`,
+               price_per_day, location, image_url, is_available, quantity, created_at`,
     [
       req.user.id,
       body.title.trim(),
@@ -236,6 +246,7 @@ const createEquipment = asyncHandler(async (req, res) => {
       body.location.trim(),
       body.image_url ? body.image_url.trim() : null,
       body.is_available === undefined ? true : body.is_available,
+      quantity,
     ]
   );
 
@@ -266,6 +277,9 @@ const updateEquipment = asyncHandler(async (req, res) => {
     if (field === "category" && typeof value === "string") {
       return normalizeCategory(value);
     }
+    if (field === "quantity") {
+      return Number(value);
+    }
     if (typeof value === "string") {
       return value.trim();
     }
@@ -279,7 +293,7 @@ const updateEquipment = asyncHandler(async (req, res) => {
      SET ${assignments.join(", ")}
      WHERE id = $${values.length - 1} AND owner_id = $${values.length}
      RETURNING id, owner_id, title, category, sub_category, description,
-               price_per_day, location, image_url, is_available, created_at`,
+               price_per_day, location, image_url, is_available, quantity, created_at`,
     values
   );
 
@@ -318,6 +332,9 @@ const adminUpdateEquipment = asyncHandler(async (req, res) => {
     if (field === "category" && typeof value === "string") {
       return normalizeCategory(value);
     }
+    if (field === "quantity") {
+      return Number(value);
+    }
     if (typeof value === "string") {
       return value.trim();
     }
@@ -331,7 +348,7 @@ const adminUpdateEquipment = asyncHandler(async (req, res) => {
      SET ${assignments.join(", ")}
      WHERE id = $${values.length}
      RETURNING id, owner_id, title, category, sub_category, description,
-               price_per_day, location, image_url, is_available, created_at`,
+               price_per_day, location, image_url, is_available, quantity, created_at`,
     values
   );
 

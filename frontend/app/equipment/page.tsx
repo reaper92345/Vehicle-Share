@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
-import { Truck, BarChart3 } from "lucide-react";
+import { Truck, BarChart3, Pencil } from "lucide-react";
 import RenterDashboard from "./components/RenterDashboard";
 import { TiltCard, MagneticButton } from "../../components/smoothui";
 // Removed renter.css import to avoid conflicts
 
 interface Equipment {
   id: string;
+  owner_id?: string;
   title: string;
   category: string;
   sub_category: string;
@@ -19,6 +20,7 @@ interface Equipment {
   location: string;
   image_url: string;
   is_available: boolean;
+  quantity?: number;
   owner_name?: string;
   owner_email?: string;
   owner_phone?: string;
@@ -29,7 +31,7 @@ export default function EquipmentListPage() {
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
   const [activeTab, setActiveTab] = useState<"equipment" | "renter">("equipment");
-  const [user, setUser] = useState<{ name?: string; email?: string; image?: string; role?: string } | null>(null);
+  const [user, setUser] = useState<{ id?: string; name?: string; email?: string; image?: string; role?: string; user_type?: string } | null>(null);
   const router = useRouter();
 
   // Load logged‑in user info
@@ -222,12 +224,28 @@ export default function EquipmentListPage() {
                         <div>
                           <p className="text-xs text-slate-500">Price per day</p>
                           <p className="text-xl font-bold text-slate-900">रु{item.price_per_day}</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            {item.quantity !== undefined ? item.quantity : 1} unit{(item.quantity || 1) > 1 ? "s" : ""} available
+                          </p>
                         </div>
-                        <Link href={`/bookings/create?equipment_id=${item.id}`}>
-                          <MagneticButton className="btn-primary text-xs py-2 px-4 rounded-xl" title="Book this equipment">
-                            Book Now
-                          </MagneticButton>
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          {user && (user.id === item.owner_id || ["admin"].includes(user.role?.toLowerCase() || "")) && (
+                            <Link href={`/equipment/edit/${item.id}`}>
+                              <button
+                                className="flex items-center gap-1 text-xs py-2 px-3 rounded-xl border border-brand-200 bg-brand-50 hover:bg-brand-100 text-brand-700 font-medium transition-colors"
+                                title="Edit this equipment listing and units"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                                <span>Edit</span>
+                              </button>
+                            </Link>
+                          )}
+                          <Link href={`/bookings/create?equipment_id=${item.id}`}>
+                            <MagneticButton className="btn-primary text-xs py-2 px-4 rounded-xl" title="Book this equipment">
+                              Book Now
+                            </MagneticButton>
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </div>

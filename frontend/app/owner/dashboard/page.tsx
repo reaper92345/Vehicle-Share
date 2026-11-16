@@ -64,6 +64,7 @@ interface Equipment {
   image_url?: string;
   description?: string;
   condition?: string;
+  quantity?: number;
 }
 
 interface BookingSummary {
@@ -482,7 +483,12 @@ export default function ModernOwnerDashboard() {
 
                           <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                             <span className="font-semibold text-brand-700 text-sm">रु{Number(eq.price_per_day).toLocaleString()}/day</span>
-                            <span className="text-slate-500">{machineBookings.length} booking(s)</span>
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-semibold text-slate-700">
+                                {eq.quantity !== undefined ? eq.quantity : 1} unit{(eq.quantity || 1) > 1 ? "s" : ""}
+                              </span>
+                              <span className="text-slate-500">{machineBookings.length} booking(s)</span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -704,7 +710,7 @@ export default function ModernOwnerDashboard() {
               />
             )}
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
               <div>
                 <p className="text-xs text-slate-500 uppercase">Category</p>
                 <p className="font-semibold text-slate-800 text-sm mt-0.5">{selectedMachine.category}</p>
@@ -716,6 +722,12 @@ export default function ModernOwnerDashboard() {
               <div>
                 <p className="text-xs text-slate-500 uppercase">Daily Rate</p>
                 <p className="font-bold text-brand-700 text-sm mt-0.5">रु{Number(selectedMachine.price_per_day).toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 uppercase">Total Inventory</p>
+                <p className="font-bold text-slate-800 text-sm mt-0.5">
+                  {selectedMachine.quantity !== undefined ? selectedMachine.quantity : 1} unit{(selectedMachine.quantity || 1) > 1 ? "s" : ""}
+                </p>
               </div>
             </div>
 
@@ -759,6 +771,12 @@ export default function ModernOwnerDashboard() {
             </div>
 
             <div className="pt-2 flex justify-end gap-2 border-t border-slate-100">
+              <Link href={`/equipment/edit/${selectedMachine.id}`}>
+                <MagneticButton className="text-xs py-2 px-4 rounded-xl border border-brand-200 bg-brand-50 hover:bg-brand-100 text-brand-700 font-medium flex items-center gap-1.5 transition-colors">
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>Edit Details & Units</span>
+                </MagneticButton>
+              </Link>
               <Link href={`/bookings`}>
                 <MagneticButton className="btn-primary text-xs py-2 px-4 rounded-xl">
                   Manage Requests

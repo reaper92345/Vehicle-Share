@@ -8,11 +8,14 @@ import { ArrowLeft, Save, ImageIcon, AlertCircle, CheckCircle2 } from "lucide-re
 import { useNotification } from "../../../../components/smoothui";
 
 interface JwtPayload {
-  userId: number;
-  userType: string;
-  email: string;
-  iat: number;
-  exp: number;
+  sub?: string;
+  userId?: string | number;
+  id?: string | number;
+  userType?: string;
+  role?: string;
+  email?: string;
+  iat?: number;
+  exp?: number;
 }
 
 interface EquipmentForm {
@@ -24,6 +27,7 @@ interface EquipmentForm {
   location: string;
   image_url: string;
   is_available: boolean;
+  quantity: number;
 }
 
 const FIELD_MAX: Record<string, number> = {
@@ -47,6 +51,7 @@ export default function EditEquipmentPage() {
     location: "",
     image_url: "",
     is_available: true,
+    quantity: 1,
   });
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -72,7 +77,8 @@ export default function EditEquipmentPage() {
       return;
     }
 
-    if (decoded.userType !== "owner" && decoded.userType !== "both") {
+    const userRole = (decoded.role || decoded.userType || "").toLowerCase();
+    if (userRole !== "owner" && userRole !== "both" && userRole !== "admin") {
       notifyError("Only equipment owners can edit listings.");
       router.push("/equipment");
       return;
@@ -92,8 +98,23 @@ export default function EditEquipmentPage() {
         const data = await res.json();
         const eq = data.equipment ?? data;
 
-        // Verify ownership
-        if (eq.owner_id !== decoded.userId) {
+        // Current user id from token (sub or userId or id) or stored user
+        const currentUserId = decoded.sub || decoded.userId || decoded.id;
+        const storedUser = localStorage.getItem("equipshare_user");
+        let storedUserId = null;
+        if (storedUser) {
+          try {
+            const parsed = JSON.parse(storedUser);
+            storedUserId = parsed.id;
+          } catch (_) {}
+        }
+
+        // Verify ownership (or allow admin)
+        const isOwner = (currentUserId && String(eq.owner_id) === String(currentUserId)) ||
+                        (storedUserId && String(eq.owner_id) === String(storedUserId)) ||
+                        userRole === "admin";
+
+        if (!isOwner) {
           notifyError("You can only edit your own listings.");
           router.push("/owner/dashboard");
           return;
@@ -108,6 +129,7 @@ export default function EditEquipmentPage() {
           location: eq.location ?? "",
           image_url: eq.image_url ?? "",
           is_available: eq.is_available ?? true,
+          quantity: eq.quantity !== undefined && Number(eq.quantity) >= 1 ? Number(eq.quantity) : 1,
         });
       } catch {
         notifyError("Failed to load equipment data.");
@@ -140,6 +162,10 @@ export default function EditEquipmentPage() {
     const price = Number(form.price_per_day);
     if (isNaN(price) || price <= 0 || price > 1_000_000_000) {
       errors.price_per_day = "Price per day must be a positive number up to 1,000,000,000.";
+    }
+    const qty = Number(form.quantity);
+    if (isNaN(qty) || !Number.isInteger(qty) || qty < 1 || qty > 1000) {
+      errors.quantity = "Total number of available units must be an integer between 1 and 1,000.";
     }
     if (!form.location.trim() || form.location.trim().length > FIELD_MAX.location) {
       errors.location = `Location is required and must be ≤ ${FIELD_MAX.location} characters.`;
@@ -179,6 +205,7 @@ export default function EditEquipmentPage() {
         price_per_day: Number(form.price_per_day),
         location: form.location.trim(),
         is_available: form.is_available,
+        quantity: Math.max(1, Math.floor(Number(form.quantity) || 1)),
       };
       if (form.image_url.trim()) {
         body.image_url = form.image_url.trim();
@@ -333,6 +360,48 @@ export default function EditEquipmentPage() {
                 />
                 {fieldErrors.location && <FieldError msg={fieldErrors.location} />}
               </div>
+            </div>
+
+            {/* Total Units / Inventory Quantity */}
+            <div className="rounded-xl border border-black/5 bg-slate-50/70 p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <label className="block text-sm font-semibold text-[#171717]">
+                    Total Equipment Inventory / Units
+                  </label>
+                  <p className="text-xs text-[#737373] mt-0.5">
+                    Increase or update the number of identical equipment units you have available in this rental plan.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, quantity: Math.max(1, (Number(form.quantity) || 1) - 1) })}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white font-bold text-slate-700 hover:bg-slate-100 active:scale-95 transition-transform"
+                    title="Decrease units"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    min={1}
+                    max={1000}
+                    className="input w-24 text-center font-bold text-slate-900"
+                    value={form.quantity}
+                    onChange={(e) => setForm({ ...form, quantity: Math.max(1, parseInt(e.target.value, 10) || 1) })}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, quantity: Math.min(1000, (Number(form.quantity) || 1) + 1) })}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-brand-50 text-brand-700 font-bold hover:bg-brand-100 active:scale-95 transition-transform"
+                    title="Increase units"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              {fieldErrors.quantity && <FieldError msg={fieldErrors.quantity} />}
             </div>
 
             {/* Image URL */}
