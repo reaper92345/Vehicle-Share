@@ -10,8 +10,8 @@ function getBookingOverlapQuery() {
     FROM bookings
     WHERE equipment_id = $1
       AND status IN ('Approved', 'Active')
-      AND start_date < $3
-      AND end_date > $2
+      AND start_date <= $3
+      AND end_date >= $2
   `;
 }
 
@@ -50,7 +50,7 @@ const createBooking = asyncHandler(async (req, res) => {
   }
 
   const equipmentResult = await pool.query(
-    `SELECT id, owner_id, price_per_day, is_available, title
+    `SELECT id, owner_id, price_per_day, is_available, title, COALESCE(quantity, 1) AS quantity
      FROM equipment
      WHERE id = $1`,
     [equipment_id]
@@ -71,9 +71,10 @@ const createBooking = asyncHandler(async (req, res) => {
     end.toISOString().slice(0, 10),
   ]);
 
-  if (overlapResult.rowCount > 0) {
+  const maxUnits = Math.max(1, Number(equipment.quantity) || 1);
+  if (overlapResult.rowCount >= maxUnits) {
     return res.status(409).json({
-      error: "This equipment is already booked for the requested date range.",
+      error: `All ${maxUnits} unit(s) of this equipment are already booked for the requested date range.`,
       conflictingBookingIds: overlapResult.rows.map((row) => row.id),
     });
   }

@@ -6,6 +6,10 @@ const {
   parsePositiveInteger,
 } = require("../utils/validation");
 const { asyncHandler } = require("../utils/async-handler");
+const {
+  computeBoundingBox,
+  getCoordinatesForLocation,
+} = require("../utils/geo");
 
 // Helper to normalize category strings (case‑insensitive)
 function normalizeCategory(cat) {
@@ -60,6 +64,24 @@ const EQUIPMENT_FIELDS = {
     },
     required: false,
   },
+  latitude: {
+    column: "latitude",
+    validate: (value) => {
+      if (value === null || value === undefined || value === "") return true;
+      const num = Number(value);
+      return !Number.isNaN(num) && num >= -90 && num <= 90;
+    },
+    required: false,
+  },
+  longitude: {
+    column: "longitude",
+    validate: (value) => {
+      if (value === null || value === undefined || value === "") return true;
+      const num = Number(value);
+      return !Number.isNaN(num) && num >= -180 && num <= 180;
+    },
+    required: false,
+  },
   // New optional fields
   condition: { column: "condition", validate: (value) => typeof value === "string" && isNonEmptyString(value, 100), required: false },
   manufacturer: { column: "manufacturer", validate: (value) => typeof value === "string" && isNonEmptyString(value, 120), required: false },
@@ -86,7 +108,7 @@ function validateEquipmentInput(body, partial) {
 }
 
 const listEquipment = asyncHandler(async (req, res) => {
-  const { category, location, search } = req.query;
+  const { category, location, search, lat, lng, radius_km, sort } = req.query;
   const limit = req.query.limit === undefined ? 20 : parsePositiveInteger(req.query.limit);
   const page = req.query.page === undefined ? 1 : parsePositiveInteger(req.query.page);
 
@@ -113,6 +135,7 @@ const listEquipment = asyncHandler(async (req, res) => {
   const conditions = ["e.is_available = TRUE"];
   const values = [];
 
+  // 1. Standard text & category filters
   if (category !== undefined) {
     if (normalizedCategory !== undefined) {
       values.push(normalizedCategory);
@@ -133,17 +156,78 @@ const listEquipment = asyncHandler(async (req, res) => {
     );
   }
 
+  // 2. Geospatial Filtering & Calculation (Bounding Box + Haversine)
+  const userLat = lat !== undefined ? Number(lat) : null;
+  const userLng = lng !== undefined ? Number(lng) : null;
+  const searchRadiusKm = radius_km !== undefined ? Math.min(1000, Math.max(1, Number(radius_km))) : null;
+
+  const hasGeoQuery =
+    userLat !== null &&
+    userLng !== null &&
+    !Number.isNaN(userLat) &&
+    !Number.isNaN(userLng) &&
+    userLat >= -90 &&
+    userLat <= 90 &&
+    userLng >= -180 &&
+    userLng <= 180;
+
+  let distanceSelectExpr = "NULL AS distance_km";
+  let orderByClause = "e.created_at DESC, e.id";
+
+  if (hasGeoQuery) {
+    // Parameterize userLat and userLng
+    values.push(userLat);
+    const latParam = `$${values.length}`;
+    values.push(userLng);
+    const lngParam = `$${values.length}`;
+
+    // Haversine formula expression in kilometers using spherical trigonometry
+    const haversineFormula = `(6371 * acos(
+      least(1.0, greatest(-1.0,
+        cos(radians(${latParam})) * cos(radians(e.latitude)) *
+        cos(radians(e.longitude) - radians(${lngParam})) +
+        sin(radians(${latParam})) * sin(radians(e.latitude))
+      ))
+    ))`;
+
+    distanceSelectExpr = `ROUND((${haversineFormula})::numeric, 1) AS distance_km`;
+
+    // A) Bounding Box Filter (Fast Preliminary SQL Spatial Filter)
+    if (searchRadiusKm !== null && !Number.isNaN(searchRadiusKm)) {
+      const box = computeBoundingBox(userLat, userLng, searchRadiusKm);
+      values.push(box.minLat, box.maxLat, box.minLng, box.maxLng);
+      const minLatIdx = values.length - 3;
+      const maxLatIdx = values.length - 2;
+      const minLngIdx = values.length - 1;
+      const maxLngIdx = values.length;
+
+      // 1st stage: Bounding box query (uses index on latitude, longitude)
+      conditions.push(`e.latitude BETWEEN $${minLatIdx} AND $${maxLatIdx}`);
+      conditions.push(`e.longitude BETWEEN $${minLngIdx} AND $${maxLngIdx}`);
+
+      // 2nd stage: Precise spherical boundary filter
+      values.push(searchRadiusKm);
+      conditions.push(`${haversineFormula} <= $${values.length}`);
+    }
+
+    // Proximity sorting (default when lat & lng are supplied or sort=distance)
+    if (sort === "distance" || sort === undefined || sort === "") {
+      orderByClause = `${haversineFormula} ASC, e.id`;
+    }
+  }
+
   const offset = (page - 1) * limit;
   values.push(limit, offset);
 
   const { rows } = await pool.query(
     `SELECT e.id, e.owner_id, e.title, e.category, e.sub_category, e.description,
-            e.price_per_day, e.location, e.image_url, e.is_available, COALESCE(e.quantity, 1) AS quantity, e.created_at,
+            e.price_per_day, e.location, e.latitude, e.longitude, e.image_url,
+            e.is_available, COALESCE(e.quantity, 1) AS quantity, ${distanceSelectExpr}, e.created_at,
              u.full_name AS owner_name, u.email AS owner_email, u.phone_number AS owner_phone
      FROM equipment e
      JOIN users u ON u.id = e.owner_id
      WHERE ${conditions.join(" AND ")}
-     ORDER BY e.created_at DESC, e.id
+     ORDER BY ${orderByClause}
      LIMIT $${values.length - 1} OFFSET $${values.length}`,
     values
   );
@@ -159,7 +243,7 @@ const getEquipmentById = asyncHandler(async (req, res) => {
 
   const { rows } = await pool.query(
     `SELECT e.id, e.owner_id, e.title, e.category, e.sub_category, e.description,
-            e.price_per_day, e.location, e.image_url, e.is_available, COALESCE(e.quantity, 1) AS quantity, e.created_at,
+            e.price_per_day, e.location, e.latitude, e.longitude, e.image_url, e.is_available, COALESCE(e.quantity, 1) AS quantity, e.created_at,
            u.full_name AS owner_name, u.email AS owner_email, u.phone_number AS owner_phone
      FROM equipment e
      JOIN users u ON u.id = e.owner_id
@@ -195,7 +279,7 @@ const getEquipmentById = asyncHandler(async (req, res) => {
 const listMyEquipment = asyncHandler(async (req, res) => {
   const { rows } = await pool.query(
     `SELECT e.id, e.owner_id, e.title, e.category, e.sub_category, e.description,
-            e.price_per_day, e.location, e.image_url, e.is_available, COALESCE(e.quantity, 1) AS quantity, e.created_at
+            e.price_per_day, e.location, e.latitude, e.longitude, e.image_url, e.is_available, COALESCE(e.quantity, 1) AS quantity, e.created_at
      FROM equipment e
      WHERE e.owner_id = $1
      ORDER BY e.created_at DESC, e.id`,
@@ -207,7 +291,7 @@ const listMyEquipment = asyncHandler(async (req, res) => {
 const listAllEquipmentAdmin = asyncHandler(async (req, res) => {
   const { rows } = await pool.query(
     `SELECT e.id, e.owner_id, e.title, e.category, e.sub_category, e.description,
-            e.price_per_day, e.location, e.image_url, e.is_available, COALESCE(e.quantity, 1) AS quantity, e.created_at,
+            e.price_per_day, e.location, e.latitude, e.longitude, e.image_url, e.is_available, COALESCE(e.quantity, 1) AS quantity, e.created_at,
             u.full_name AS owner_name, u.email AS owner_email
      FROM equipment e
      JOIN users u ON u.id = e.owner_id
@@ -229,13 +313,25 @@ const createEquipment = asyncHandler(async (req, res) => {
 
   const quantity = body.quantity !== undefined ? Number(body.quantity) : 1;
 
+  // Derive or parse latitude and longitude
+  let latitude = body.latitude !== undefined && body.latitude !== null && body.latitude !== "" ? Number(body.latitude) : null;
+  let longitude = body.longitude !== undefined && body.longitude !== null && body.longitude !== "" ? Number(body.longitude) : null;
+
+  if (latitude === null || longitude === null) {
+    const defaultCoords = getCoordinatesForLocation(body.location);
+    if (defaultCoords) {
+      latitude = defaultCoords.lat;
+      longitude = defaultCoords.lng;
+    }
+  }
+
   const { rows } = await pool.query(
     `INSERT INTO equipment
        (owner_id, title, category, sub_category, description, price_per_day,
-        location, image_url, is_available, quantity)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        location, latitude, longitude, image_url, is_available, quantity)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      RETURNING id, owner_id, title, category, sub_category, description,
-               price_per_day, location, image_url, is_available, quantity, created_at`,
+               price_per_day, location, latitude, longitude, image_url, is_available, quantity, created_at`,
     [
       req.user.id,
       body.title.trim(),
@@ -244,6 +340,8 @@ const createEquipment = asyncHandler(async (req, res) => {
       body.description === undefined ? null : body.description.trim(),
       body.price_per_day,
       body.location.trim(),
+      latitude,
+      longitude,
       body.image_url ? body.image_url.trim() : null,
       body.is_available === undefined ? true : body.is_available,
       quantity,
@@ -280,6 +378,9 @@ const updateEquipment = asyncHandler(async (req, res) => {
     if (field === "quantity") {
       return Number(value);
     }
+    if (field === "latitude" || field === "longitude") {
+      return value !== null && value !== undefined && value !== "" ? Number(value) : null;
+    }
     if (typeof value === "string") {
       return value.trim();
     }
@@ -293,7 +394,7 @@ const updateEquipment = asyncHandler(async (req, res) => {
      SET ${assignments.join(", ")}
      WHERE id = $${values.length - 1} AND owner_id = $${values.length}
      RETURNING id, owner_id, title, category, sub_category, description,
-               price_per_day, location, image_url, is_available, quantity, created_at`,
+               price_per_day, location, latitude, longitude, image_url, is_available, quantity, created_at`,
     values
   );
 
@@ -335,6 +436,9 @@ const adminUpdateEquipment = asyncHandler(async (req, res) => {
     if (field === "quantity") {
       return Number(value);
     }
+    if (field === "latitude" || field === "longitude") {
+      return value !== null && value !== undefined && value !== "" ? Number(value) : null;
+    }
     if (typeof value === "string") {
       return value.trim();
     }
@@ -348,7 +452,7 @@ const adminUpdateEquipment = asyncHandler(async (req, res) => {
      SET ${assignments.join(", ")}
      WHERE id = $${values.length}
      RETURNING id, owner_id, title, category, sub_category, description,
-               price_per_day, location, image_url, is_available, quantity, created_at`,
+               price_per_day, location, latitude, longitude, image_url, is_available, quantity, created_at`,
     values
   );
 

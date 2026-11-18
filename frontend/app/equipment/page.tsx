@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
-import { Truck, BarChart3, Pencil } from "lucide-react";
+import { Truck, BarChart3, Pencil, MapPin, Navigation, Crosshair } from "lucide-react";
 import RenterDashboard from "./components/RenterDashboard";
 import { TiltCard, MagneticButton } from "../../components/smoothui";
 // Removed renter.css import to avoid conflicts
@@ -18,6 +18,9 @@ interface Equipment {
   description: string;
   price_per_day: string;
   location: string;
+  latitude?: number;
+  longitude?: number;
+  distance_km?: number | string;
   image_url: string;
   is_available: boolean;
   quantity?: number;
@@ -31,6 +34,10 @@ export default function EquipmentListPage() {
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
   const [activeTab, setActiveTab] = useState<"equipment" | "renter">("equipment");
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [radiusKm, setRadiusKm] = useState<string>("50");
+  const [geoLocating, setGeoLocating] = useState(false);
+  const [sortByDistance, setSortByDistance] = useState(false);
   const [user, setUser] = useState<{ id?: string; name?: string; email?: string; image?: string; role?: string; user_type?: string } | null>(null);
   const router = useRouter();
 
@@ -40,7 +47,7 @@ export default function EquipmentListPage() {
     if (stored) {
       try {
         setUser(JSON.parse(stored));
-      } catch (_) {}
+      } catch (_) { }
     }
   }, []);
 
@@ -49,6 +56,33 @@ export default function EquipmentListPage() {
     localStorage.removeItem("equipshare_user");
     setUser(null);
     router.push("/");
+  };
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    setGeoLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setSortByDistance(true);
+        setGeoLocating(false);
+      },
+      () => {
+        // Fallback to Kathmandu Valley coordinates if browser permission is denied or simulated
+        setUserCoords({ lat: 27.7172, lng: 85.3240 });
+        setSortByDistance(true);
+        setGeoLocating(false);
+      },
+      { timeout: 7000 }
+    );
+  };
+
+  const handleClearLocation = () => {
+    setUserCoords(null);
+    setSortByDistance(false);
   };
 
   // State for toggling role display on avatar click
@@ -74,6 +108,14 @@ export default function EquipmentListPage() {
   if (category) queryParams.append("category", category);
   if (location) queryParams.append("location", location);
   if (search) queryParams.append("search", search);
+  if (userCoords && sortByDistance) {
+    queryParams.append("lat", String(userCoords.lat));
+    queryParams.append("lng", String(userCoords.lng));
+    if (radiusKm && radiusKm !== "all") {
+      queryParams.append("radius_km", radiusKm);
+    }
+    queryParams.append("sort", "distance");
+  }
 
   const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/equipment?${queryParams.toString()}`;
   const { data: equipmentList = [], error, isLoading, mutate } = useSWR<Equipment[]>(apiUrl, fetcher, { revalidateOnFocus: false });
@@ -81,7 +123,7 @@ export default function EquipmentListPage() {
   // Re‑fetch when filters change
   useEffect(() => {
     mutate();
-  }, [category, location, search]);
+  }, [category, location, search, userCoords, radiusKm, sortByDistance]);
 
   // Render tab navigation – show Renter tab only for renter/admin roles
   // Show Renter tab unconditionally; RenterDashboard component will handle auth/role checks
@@ -128,11 +170,10 @@ export default function EquipmentListPage() {
       {/* Tab selector */}
       <div className="mx-auto max-w-7xl px-6 py-4 flex space-x-3">
         <button
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition shadow-sm ${
-            activeTab === "equipment"
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition shadow-sm ${activeTab === "equipment"
               ? "bg-brand-700 text-white shadow-brand-700/20"
               : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
-          }`}
+            }`}
           onClick={() => setActiveTab("equipment")}
         >
           <Truck className="w-4 h-4" />
@@ -140,11 +181,10 @@ export default function EquipmentListPage() {
         </button>
         {canSeeRenterTab && (
           <button
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition shadow-sm ${
-              activeTab === "renter"
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition shadow-sm ${activeTab === "renter"
                 ? "bg-brand-700 text-white shadow-brand-700/20"
                 : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
-            }`}
+              }`}
             onClick={() => setActiveTab("renter")}
           >
             <BarChart3 className="w-4 h-4" />
@@ -162,7 +202,7 @@ export default function EquipmentListPage() {
               <h1 className="text-3xl font-bold text-slate-900">Browse Equipment</h1>
               <p className="mt-1 text-slate-600">Find agricultural and construction gear available for rent.</p>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <input type="text" placeholder="Search keyword..." className="input max-w-xs" value={search} onChange={(e) => setSearch(e.target.value)} />
               <input type="text" placeholder="City/Location..." className="input max-w-xs" value={location} onChange={(e) => setLocation(e.target.value)} />
               <select className="input max-w-xs" value={category} onChange={(e) => setCategory(e.target.value)}>
@@ -171,6 +211,58 @@ export default function EquipmentListPage() {
                 <option value="Construction">Construction</option>
               </select>
               <button type="button" className="btn-primary" onClick={() => mutate()} title="Refresh listings based on filters">Filter</button>
+            </div>
+          </div>
+
+          {/* Geospatial Proximity & Radius Bounding-Box Controls */}
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-xs">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handleDetectLocation}
+                disabled={geoLocating}
+                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all shadow-xs ${userCoords
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
+                  }`}
+                title="Sort listings by physical distance from your current location"
+              >
+                <Navigation className={`w-3.5 h-3.5 ${geoLocating ? "animate-spin text-brand-600" : ""}`} />
+                <span>
+                  {geoLocating ? "Detecting GPS..." : userCoords ? "Location Active (Near You)" : "Sort By Distance"}
+                </span>
+              </button>
+
+              {userCoords && (
+                <>
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+                    <span>Radius:</span>
+                    <select
+                      className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      value={radiusKm}
+                      onChange={(e) => setRadiusKm(e.target.value)}
+                    >
+                      <option value="25">Within 25 km</option>
+                      <option value="50">Within 50 km</option>
+                      <option value="100">Within 100 km</option>
+                      <option value="200">Within 200 km</option>
+                      <option value="all">Entire Country (All Nepal)</option>
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleClearLocation}
+                    className="text-xs text-slate-400 hover:text-slate-600 underline"
+                  >
+                    Reset
+                  </button>
+                </>
+              )}
+            </div>
+
+            <div className="text-xs text-slate-500 font-medium flex items-center gap-1">
+              <Crosshair className="w-3.5 h-3.5 text-slate-400" />
+              <span>Haversine Great-Circle Proximity Engine</span>
             </div>
           </div>
 
@@ -209,7 +301,15 @@ export default function EquipmentListPage() {
                   <div className="flex flex-1 flex-col p-5">
                     <div className="flex items-center justify-between">
                       <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700">{item.category}</span>
-                      <span className="text-xs font-medium text-slate-500">{item.location}</span>
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                        {item.distance_km !== null && item.distance_km !== undefined && (
+                          <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 font-bold text-emerald-700 border border-emerald-100 flex items-center gap-0.5">
+                            <Navigation className="w-3 h-3 inline" />
+                            {item.distance_km} km
+                          </span>
+                        )}
+                        <span>{item.location}</span>
+                      </div>
                     </div>
                     <h3 className="mt-3 text-lg font-bold text-slate-900">{item.title}</h3>
                     {item.owner_name && (
