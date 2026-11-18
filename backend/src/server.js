@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const app = require("./app");
 const { pool } = require("./db/pool");
+const { runStartupMigrations } = require("./db/migrate");
 
 const port = Number.parseInt(process.env.PORT || "4000", 10);
 
