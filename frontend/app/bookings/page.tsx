@@ -12,11 +12,14 @@ import {
   QrCode, 
   Check, 
   X,
-  ExternalLink 
+  ExternalLink,
+  RotateCcw,
+  CheckCircle 
 } from "lucide-react";
 import { AnimatedTabs } from "../../components/smoothui/AnimatedTabs";
 import { MagneticButton } from "../../components/smoothui/MagneticButton";
 import { TiltCard } from "../../components/smoothui/TiltCard";
+import { ReviewModal } from "../../components/ReviewModal";
 
 interface Booking {
   id: string | number;
@@ -47,6 +50,8 @@ export default function BookingsPage() {
 
   // Status update state (for owner approving/rejecting)
   const [updatingId, setUpdatingId] = useState<string | number | null>(null);
+  const [returningId, setReturningId] = useState<string | number | null>(null);
+  const [reviewBooking, setReviewBooking] = useState<{ id: string | number; title: string } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
@@ -257,6 +262,50 @@ export default function BookingsPage() {
       setPaymentError("Network error while confirming payment.");
     } finally {
       setConfirmingPayment(false);
+    }
+  };
+
+  const handleReturnEquipment = async (booking: Booking, userRoleType: "renter" | "owner") => {
+    if (!token) return;
+    const promptMsg =
+      userRoleType === "renter"
+        ? `Are you sure you want to mark "${booking.equipment_title}" as returned?`
+        : `Confirm receipt and check-in for returned equipment "${booking.equipment_title}"?`;
+
+    if (!window.confirm(promptMsg)) return;
+
+    setReturningId(booking.id);
+    setActionError(null);
+    setActionSuccess(null);
+
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    try {
+      const res = await fetch(`${apiUrl}/api/bookings/${booking.id}/return`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setActionSuccess(`✓ Rental for "${booking.equipment_title}" marked as Completed!`);
+        setRenterBookings((prev) =>
+          prev.map((b) => (b.id === booking.id ? { ...b, status: "Completed" } : b))
+        );
+        setOwnerBookings((prev) =>
+          prev.map((b) => (b.id === booking.id ? { ...b, status: "Completed" } : b))
+        );
+        if (userRoleType === "renter") {
+          setReviewBooking({ id: booking.id, title: booking.equipment_title });
+        }
+      } else {
+        setActionError(data.error || "Failed to complete return.");
+      }
+    } catch {
+      setActionError("Network error while communicating with server.");
+    } finally {
+      setReturningId(null);
     }
   };
 
@@ -521,14 +570,24 @@ export default function BookingsPage() {
                             ✕ Reject
                           </MagneticButton>
                         </div>
-                      ) : b.status === "Approved" ? (
-                        <div className="text-right">
-                          <span className="inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
-                            Approved
-                          </span>
-                          <p className="text-[11px] text-slate-500 mt-1">
-                            {b.payment_status === "paid" ? "Payment received" : "Awaiting renter payment"}
-                          </p>
+                      ) : b.status === "Approved" || b.status === "Active" ? (
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="text-right">
+                            <span className="inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
+                              {b.status}
+                            </span>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              {b.payment_status === "paid" ? "Payment received" : "Awaiting renter payment"}
+                            </p>
+                          </div>
+                          <MagneticButton
+                            onClick={() => handleReturnEquipment(b, "owner")}
+                            disabled={returningId === b.id}
+                            className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 flex items-center gap-1 shadow-sm"
+                          >
+                            <RotateCcw className="w-3 h-3 text-emerald-600" />
+                            <span>{returningId === b.id ? "Checking in..." : "Acknowledge Return Received"}</span>
+                          </MagneticButton>
                         </div>
                       ) : (
                         <span className="text-xs text-slate-500 font-medium">{b.status}</span>
@@ -553,6 +612,24 @@ export default function BookingsPage() {
                         <div className="text-right">
                           <span className="text-xs text-emerald-600 font-semibold">Payment Completed</span>
                           <Link href="/hire/dashboard" className="block text-[11px] text-brand-700 mt-1">View / download receipt</Link>
+                        </div>
+                      )}
+
+                      {(b.status === "Approved" || b.status === "Active") && (
+                        <MagneticButton
+                          onClick={() => handleReturnEquipment(b, "renter")}
+                          disabled={returningId === b.id}
+                          className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs px-3.5 py-1.5 font-semibold flex items-center gap-1.5 shadow-sm mt-1"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>{returningId === b.id ? "Returning..." : "Return Equipment"}</span>
+                        </MagneticButton>
+                      )}
+
+                      {b.status === "Completed" && (
+                        <div className="flex items-center gap-1 text-xs text-slate-500 font-medium">
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Returned & Completed</span>
                         </div>
                       )}
 
@@ -651,6 +728,13 @@ export default function BookingsPage() {
           </div>
         </div>
       )}
+
+      <ReviewModal
+        isOpen={Boolean(reviewBooking)}
+        onClose={() => setReviewBooking(null)}
+        bookingId={reviewBooking?.id || null}
+        equipmentTitle={reviewBooking?.title}
+      />
     </main>
   );
 }

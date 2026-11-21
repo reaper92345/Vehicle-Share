@@ -15,6 +15,7 @@ import {
 import PortalNav from "../../../components/PortalNav";
 import { AnimatedTabs, StatWidget, MagneticButton, useNotification } from "../../../components/smoothui";
 import { EquipmentTrackingMap } from "../../../components/EquipmentTrackingMap";
+import { ReviewModal } from "../../../components/ReviewModal";
 
 interface Booking {
   id: number;
@@ -57,6 +58,8 @@ export default function HireDashboard() {
   const [tab, setTab] = useState<"overview" | "active" | "tracking" | "payments" | "directory">("overview");
   const [user, setUser] = useState<{ full_name?: string; name?: string } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [returningId, setReturningId] = useState<number | null>(null);
+  const [reviewBooking, setReviewBooking] = useState<{ id: number; title: string } | null>(null);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -159,6 +162,44 @@ export default function HireDashboard() {
     window.open(url, "_blank");
   };
 
+  const handleReturnEquipment = async (booking: Booking) => {
+    if (!token) return;
+    const confirmReturn = window.confirm(
+      `Are you sure you want to return "${booking.equipment_title}" and complete this rental?`
+    );
+    if (!confirmReturn) return;
+
+    setReturningId(booking.id);
+    try {
+      const res = await fetch(`${apiUrl}/api/bookings/${booking.id}/return`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        success(
+          "Equipment Returned",
+          `Successfully returned ${booking.equipment_title}. Status is now Completed!`
+        );
+        // Refresh bookings list
+        setBookings((prev) =>
+          prev.map((b) => (b.id === booking.id ? { ...b, status: "Completed" } : b))
+        );
+        // Prompt for review
+        setReviewBooking({ id: booking.id, title: booking.equipment_title });
+      } else {
+        notifyError("Return Failed", data.error || "Could not complete equipment return.");
+      }
+    } catch {
+      notifyError("Return Error", "Network error when attempting to return equipment.");
+    } finally {
+      setReturningId(null);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-slate-50 pb-20">
       <PortalNav subtitle="Hire / rentee portal" />
@@ -259,9 +300,19 @@ export default function HireDashboard() {
                         {String(b.start_date).slice(0, 10)} to {String(b.end_date).slice(0, 10)}
                       </p>
                     </div>
-                    <p className={`text-sm font-semibold ${remain < 0 ? "text-red-600" : "text-slate-700"}`}>
-                      {remain < 0 ? `Return overdue by ${Math.abs(remain)} day(s)` : `Return due in ${remain} day(s)`}
-                    </p>
+                    <div className="flex flex-col sm:items-end justify-between gap-3">
+                      <p className={`text-sm font-semibold ${remain < 0 ? "text-red-600" : "text-slate-700"}`}>
+                        {remain < 0 ? `Return overdue by ${Math.abs(remain)} day(s)` : `Return due in ${remain} day(s)`}
+                      </p>
+                      <MagneticButton
+                        onClick={() => handleReturnEquipment(b)}
+                        disabled={returningId === b.id}
+                        className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs px-4 py-2 font-semibold shadow-sm transition-colors flex items-center gap-1.5"
+                      >
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        <span>{returningId === b.id ? "Processing Return..." : "Initiate & Confirm Return"}</span>
+                      </MagneticButton>
+                    </div>
                   </div>
                 </div>
               );
@@ -346,6 +397,13 @@ export default function HireDashboard() {
           </div>
         )}
       </div>
+
+      <ReviewModal
+        isOpen={Boolean(reviewBooking)}
+        onClose={() => setReviewBooking(null)}
+        bookingId={reviewBooking?.id || null}
+        equipmentTitle={reviewBooking?.title}
+      />
     </main>
   );
 }

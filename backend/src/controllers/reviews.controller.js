@@ -70,7 +70,33 @@ const getReviewsForUser = asyncHandler(async (req, res) => {
     [userId]
   );
 
-  return res.status(200).json({ reviews: rows });
+  // Compute average rating and count
+  const count = rows.length;
+  const avg = count > 0 ? (rows.reduce((sum, r) => sum + r.rating, 0) / count).toFixed(1) : null;
+
+  return res.status(200).json({ reviews: rows, count, average_rating: avg ? Number(avg) : null });
 });
 
-module.exports = { createReview, getReviewsForUser };
+const getEquipmentReviews = asyncHandler(async (req, res) => {
+  const equipmentId = parsePositiveInteger(req.params.equipmentId);
+  if (!equipmentId) {
+    return res.status(400).json({ error: "equipmentId must be a positive integer." });
+  }
+
+  const { rows } = await pool.query(
+    `SELECT r.id, r.rating, r.comment, r.created_at, u.full_name AS reviewer_name
+     FROM reviews r
+     JOIN bookings b ON b.id = r.booking_id
+     JOIN users u ON u.id = r.reviewer_id
+     WHERE b.equipment_id = $1
+     ORDER BY r.created_at DESC`,
+    [equipmentId]
+  );
+
+  const count = rows.length;
+  const avg = count > 0 ? (rows.reduce((sum, r) => sum + r.rating, 0) / count).toFixed(1) : null;
+
+  return res.status(200).json({ reviews: rows, count, average_rating: avg ? Number(avg) : null });
+});
+
+module.exports = { createReview, getReviewsForUser, getEquipmentReviews };

@@ -1,6 +1,7 @@
 const { pool } = require("../db/pool");
 const { asyncHandler } = require("../utils/async-handler");
 const { isNonEmptyString, parsePositiveInteger } = require("../utils/validation");
+const { calculateDynamicQuote } = require("../utils/pricing");
 
 const BOOKING_STATUSES = ["Pending", "Approved", "Active", "Completed", "Cancelled"];
 
@@ -81,7 +82,14 @@ const createBooking = asyncHandler(async (req, res) => {
 
   const differenceInMs = end.getTime() - start.getTime();
   const dayCount = Math.max(1, Math.ceil(differenceInMs / (1000 * 60 * 60 * 24)) + 1);
-  const totalPrice = Number(equipment.price_per_day) * dayCount;
+
+  // Apply Yield Management & Duration Discount Pricing Algorithm
+  const dynamicQuote = calculateDynamicQuote({
+    pricePerDay: equipment.price_per_day,
+    rentalDays: dayCount,
+    category: equipment.category,
+  });
+  const totalPrice = dynamicQuote.algorithmTotal;
 
   const bookingResult = await pool.query(
     `INSERT INTO bookings (equipment_id, renter_id, start_date, end_date, total_price, status, payment_status, terms_accepted_at, deployment_location)
@@ -137,6 +145,55 @@ const updateBookingStatus = asyncHandler(async (req, res) => {
   return res.status(200).json({
     booking: updated.rows[0],
     reason: isNonEmptyString(reason, 500) ? reason.trim() : undefined,
+  });
+});
+
+const returnBooking = asyncHandler(async (req, res) => {
+  const bookingId = parsePositiveInteger(req.params.id);
+  if (!bookingId) {
+    return res.status(400).json({ error: "Booking id must be a positive integer." });
+  }
+
+  const { return_notes } = req.body || {};
+
+  const bookingResult = await pool.query(
+    `SELECT b.id, b.status, b.equipment_id, e.owner_id, b.renter_id, e.title AS equipment_title
+     FROM bookings b
+     JOIN equipment e ON e.id = b.equipment_id
+     WHERE b.id = $1`,
+    [bookingId]
+  );
+
+  if (bookingResult.rowCount === 0) {
+    return res.status(404).json({ error: "Booking not found." });
+  }
+
+  const booking = bookingResult.rows[0];
+  const isRenter = booking.renter_id === req.user.id;
+  const isOwner = booking.owner_id === req.user.id;
+  const isAdmin = req.user.userType === "admin";
+
+  if (!isRenter && !isOwner && !isAdmin) {
+    return res.status(403).json({ error: "Only the renter or equipment owner can mark the equipment as returned." });
+  }
+
+  if (booking.status !== "Active" && booking.status !== "Approved") {
+    return res.status(409).json({ error: `Cannot return a booking that is currently ${booking.status}. Only Active or Approved rentals can be returned.` });
+  }
+
+  const updated = await pool.query(
+    `UPDATE bookings
+     SET status = 'Completed', updated_at = NOW()
+     WHERE id = $1
+     RETURNING *`,
+    [bookingId]
+  );
+
+  return res.status(200).json({
+    message: "Equipment successfully marked as returned and rental completed.",
+    booking: updated.rows[0],
+    equipment_title: booking.equipment_title,
+    return_notes: isNonEmptyString(return_notes, 500) ? return_notes.trim() : undefined,
   });
 });
 
@@ -277,6 +334,7 @@ const deleteBooking = asyncHandler(async (req, res) => {
 module.exports = {
   createBooking,
   updateBookingStatus,
+  returnBooking,
   getMyBookings,
   getOwnerDashboard,
   listAllBookings,
